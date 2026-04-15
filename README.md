@@ -1,2 +1,2 @@
 # lyrics-tool
-lyric sand poem writing tool
+lyric and poetry writing tool
