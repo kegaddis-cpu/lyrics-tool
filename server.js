@@ -1,315 +1,304 @@
-// Bring in Express so we can create the web server
-const express = require("express");
+// Wait until the full HTML document is ready before running our code
+document.addEventListener("DOMContentLoaded", () => {
+  // Get the main form so we can listen for submission
+  const lyricsForm = document.getElementById("lyrics-form");
 
-// Bring in Node's built-in path helper for safe file paths
-const path = require("path");
+  // Get the textarea where the user writes lyrics
+  const lyricsInput = document.getElementById("lyrics-input");
 
-// Bring in express-session so we can keep users logged in
-const session = require("express-session");
+  // Get the Clear button
+  const clearButton = document.getElementById("clear-btn");
 
-// Create the Express app
-const app = express();
+  // Get the status message area
+  const statusMessage = document.getElementById("status-message");
 
-// Use Render's provided port in production, or 3000 locally
-const PORT = process.env.PORT || 3000;
+  // Get the label helper buttons
+  const labelButtons = document.querySelectorAll(".label-btn");
 
-// Read the shared app password from environment variables
-const APP_PASSWORD = process.env.APP_PASSWORD || "changeme";
+  // Get the parsed sections panel elements
+  const parsedSectionsList = document.getElementById("parsed-sections-list");
+  const sectionsPanelMessage = document.getElementById("sections-panel-message");
 
-// Read the session secret from environment variables
-const SESSION_SECRET = process.env.SESSION_SECRET || "temporary-dev-secret-change-this";
+  // Get each stat output field
+  const lineCount = document.getElementById("line-count");
+  const nonEmptyLineCount = document.getElementById("non-empty-line-count");
+  const wordCount = document.getElementById("word-count");
+  const characterCount = document.getElementById("character-count");
+  const characterCountNoSpaces = document.getElementById("character-count-no-spaces");
+  const averageWordsPerLine = document.getElementById("average-words-per-line");
+  const longestLineLength = document.getElementById("longest-line-length");
+  const sectionCount = document.getElementById("section-count");
 
-// Tell Express to read JSON bodies from fetch requests
-app.use(express.json());
+  // Get the extra detail output areas
+  const sectionsEmpty = document.getElementById("sections-empty");
+  const sectionsList = document.getElementById("sections-list");
+  const longestLineText = document.getElementById("longest-line-text");
 
-// Tell Express to read normal form submissions
-app.use(express.urlencoded({ extended: true }));
+  // Keep track of which parsed section card is being dragged
+  let draggedCard = null;
 
-// Enable session support
-app.use(
-  session({
-    // Secret used to sign the session cookie
-    secret: SESSION_SECRET,
+  // Helper function to insert text into the textarea at the current cursor position
+  function insertAtCursor(textToInsert) {
+    // Get the current cursor start and end positions
+    const start = lyricsInput.selectionStart;
+    const end = lyricsInput.selectionEnd;
 
-    // Do not resave the session if it was not modified
-    resave: false,
+    // Get the text before and after the current selection
+    const before = lyricsInput.value.slice(0, start);
+    const after = lyricsInput.value.slice(end);
 
-    // Do not create empty sessions for visitors who never log in
-    saveUninitialized: false,
+    // Decide whether to add line breaks before the label
+    const prefix = before && !before.endsWith("\n") ? "\n\n" : "";
 
-    // Cookie settings for the session
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 12
-    }
-  })
-);
+    // Add line breaks after the label so the user can start typing below it
+    const insertion = `${prefix}${textToInsert}\n`;
 
-// Serve static files from the public folder
-app.use(express.static(path.join(__dirname, "public")));
+    // Build the new textarea value
+    lyricsInput.value = before + insertion + after;
 
-// Middleware that protects routes behind login
-function requireAuth(req, res, next) {
-  // If the user is logged in, continue
-  if (req.session && req.session.isAuthenticated) {
-    return next();
+    // Place the cursor at the end of the inserted text
+    const newPosition = (before + insertion).length;
+    lyricsInput.focus();
+    lyricsInput.setSelectionRange(newPosition, newPosition);
   }
 
-  // Otherwise send them to the login page
-  res.redirect("/login");
-}
+  // Helper function to create one parsed section card
+  function createSectionCard(section) {
+    // Create the outer card element
+    const card = document.createElement("article");
 
-// Helper that checks whether a line looks like a section heading
-function parseSectionHeading(line) {
-  // Remove extra spaces at the beginning and end
-  const trimmed = line.trim();
+    // Add a CSS class for styling
+    card.className = "section-card";
 
-  // Try to match common section names with an optional number
-  // Examples this should catch:
-  // Verse
-  // Verse 1
-  // Verse 2:
-  // Chorus
-  // Chorus:
-  // Bridge -
-  // Pre-Chorus 1
-  const match = trimmed.match(
-    /^(verse|chorus|bridge|hook|intro|outro|pre-chorus|post-chorus|refrain)(?:\s+(\d+))?\s*[:\-]?$/i
-  );
+    // Mark the card as draggable
+    card.draggable = true;
 
-  // If there is no match, return null
-  if (!match) {
-    return null;
-  }
+    // Store the section id on the card for future use
+    card.dataset.sectionId = section.id;
 
-  // Pull out the section type, like "Verse" or "Chorus"
-  const rawType = match[1];
+    // Create the card header
+    const cardHeader = document.createElement("div");
+    cardHeader.className = "section-card-header";
 
-  // Pull out the optional section number, like "1" or "2"
-  const rawNumber = match[2];
+    // Create the section title element
+    const title = document.createElement("h3");
+    title.textContent = section.label;
 
-  // Convert the section type to title case for cleaner display
-  const type = rawType
-    .toLowerCase()
-    .split("-")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("-");
+    // Create a small drag handle hint
+    const handle = document.createElement("span");
+    handle.className = "drag-handle";
+    handle.textContent = "Drag";
 
-  // Build the display label
-  const label = rawNumber ? `${type} ${rawNumber}` : type;
+    // Add the title and handle into the card header
+    cardHeader.appendChild(title);
+    cardHeader.appendChild(handle);
 
-  // Return the parsed heading information
-  return {
-    type,
-    number: rawNumber ? Number(rawNumber) : null,
-    label
-  };
-}
+    // Create the section body text area
+    const body = document.createElement("pre");
+    body.className = "section-card-content";
+    body.textContent = section.content || "(No lines in this section)";
 
-// Helper that turns lyrics text into structured sections
-function extractSections(text) {
-  // Split the lyrics into separate lines
-  const lines = text.split(/\r?\n/);
+    // Put the header and content into the card
+    card.appendChild(cardHeader);
+    card.appendChild(body);
 
-  // This will hold all parsed sections
-  const sections = [];
+    // When dragging starts, remember this card and add a visual state
+    card.addEventListener("dragstart", () => {
+      draggedCard = card;
+      card.classList.add("dragging");
+    });
 
-  // Keep track of the section currently being built
-  let currentSection = null;
+    // When dragging ends, remove the visual drag state
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedCard = null;
+    });
 
-  // Loop through each line in order
-  for (const line of lines) {
-    // See if this line is a section heading
-    const heading = parseSectionHeading(line);
+    // Allow dropping onto another card
+    card.addEventListener("dragover", (event) => {
+      // Prevent default so dropping is allowed
+      event.preventDefault();
 
-    // If it is a heading, start a new section
-    if (heading) {
-      // If there was already a current section, save it before starting a new one
-      if (currentSection) {
-        // Join the section body lines into one text block
-        currentSection.content = currentSection.lines.join("\n").trim();
-
-        // Save the finished section
-        sections.push(currentSection);
+      // Ignore if there is no dragged card or if the target is the same card
+      if (!draggedCard || draggedCard === card) {
+        return;
       }
 
-      // Create a new current section
-      currentSection = {
-        label: heading.label,
-        type: heading.type,
-        number: heading.number,
-        lines: [],
-        content: ""
-      };
+      // Move the dragged card before the current card
+      parsedSectionsList.insertBefore(draggedCard, card);
+    });
 
-      // Move to the next line
-      continue;
+    // Return the finished card element
+    return card;
+  }
+
+  // Helper function to render parsed sections in the panel
+  function renderParsedSections(parsedSections) {
+    // Clear any existing cards from the panel
+    parsedSectionsList.innerHTML = "";
+
+    // If there are no parsed sections, show the helper message
+    if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
+      sectionsPanelMessage.textContent = "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
+      return;
     }
 
-    // If we have not seen a heading yet, create an unlabeled section
-    if (!currentSection) {
-      currentSection = {
-        label: "Unlabeled",
-        type: "Unlabeled",
-        number: null,
-        lines: [],
-        content: ""
-      };
-    }
+    // Update the helper message for success
+    sectionsPanelMessage.textContent = "Drag section cards to experiment with order.";
 
-    // Add this line to the current section body
-    currentSection.lines.push(line);
-  }
-
-  // After the loop ends, save the last open section if one exists
-  if (currentSection) {
-    currentSection.content = currentSection.lines.join("\n").trim();
-    sections.push(currentSection);
-  }
-
-  // Return the finished sections, but remove the temporary "lines" array
-  return sections.map((section, index) => ({
-    id: index + 1,
-    label: section.label,
-    type: section.type,
-    number: section.number,
-    content: section.content
-  }));
-}
-
-// Helper function that analyzes the lyrics text
-function analyzeLyrics(text) {
-  // Split the full text into lines
-  const lines = text.split(/\r?\n/);
-
-  // Keep only lines that contain real text
-  const nonEmptyLines = lines.filter((line) => line.trim() !== "");
-
-  // Split the full text into words
-  const words = text.trim() === ""
-    ? []
-    : text.trim().split(/\s+/);
-
-  // Count all characters including spaces
-  const characterCount = text.length;
-
-  // Count characters excluding spaces, tabs, and line breaks
-  const characterCountNoSpaces = text.replace(/\s/g, "").length;
-
-  // Find the longest single line
-  const longestLine = lines.reduce((longest, current) => {
-    return current.length > longest.length ? current : longest;
-  }, "");
-
-  // Find all lines that look like section labels
-  const detectedSections = lines
-    .map((line) => parseSectionHeading(line))
-    .filter(Boolean)
-    .map((section) => section.label);
-
-  // Build structured sections from the text
-  const parsedSections = extractSections(text);
-
-  // Count words in each non-empty line
-  const wordsPerLine = nonEmptyLines.map((line) => {
-    const trimmed = line.trim();
-
-    // Return 0 if the line is somehow empty
-    if (!trimmed) return 0;
-
-    // Otherwise count the words in the line
-    return trimmed.split(/\s+/).length;
-  });
-
-  // Add up the words across all non-empty lines
-  const totalWordsInNonEmptyLines = wordsPerLine.reduce((sum, count) => sum + count, 0);
-
-  // Calculate the average words per non-empty line
-  const averageWordsPerLine =
-    nonEmptyLines.length > 0
-      ? Number((totalWordsInNonEmptyLines / nonEmptyLines.length).toFixed(2))
-      : 0;
-
-  // Return all analysis data
-  return {
-    lineCount: lines.length,
-    nonEmptyLineCount: nonEmptyLines.length,
-    wordCount: words.length,
-    characterCount,
-    characterCountNoSpaces,
-    longestLine,
-    longestLineLength: longestLine.length,
-    averageWordsPerLine,
-    sectionCount: detectedSections.length,
-    detectedSections,
-    parsedSections
-  };
-}
-
-// Show the login page
-app.get("/login", (req, res) => {
-  // If already logged in, send the user into the app
-  if (req.session && req.session.isAuthenticated) {
-    return res.redirect("/");
-  }
-
-  // Otherwise send the login page
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-// Handle login form submission
-app.post("/login", (req, res) => {
-  // Read the submitted password
-  const { password } = req.body;
-
-  // If the password is correct, mark the session as logged in
-  if (password === APP_PASSWORD) {
-    req.session.isAuthenticated = true;
-    return res.redirect("/");
-  }
-
-  // If the password is wrong, send the user back to login with an error flag
-  res.redirect("/login?error=1");
-});
-
-// Handle logout
-app.get("/logout", (req, res) => {
-  // Destroy the current session
-  req.session.destroy(() => {
-    // Send the user back to the login page
-    res.redirect("/login");
-  });
-});
-
-// Protect the main app page
-app.get("/", requireAuth, (req, res) => {
-  // Send the main tool page
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// Protect the lyrics analysis API route
-app.post("/api/analyze", requireAuth, (req, res) => {
-  // Pull the lyrics value from the JSON body
-  const { lyrics } = req.body;
-
-  // Make sure lyrics were provided as text
-  if (typeof lyrics !== "string") {
-    return res.status(400).json({
-      error: "Please send lyrics as text."
+    // Create and add one card for each parsed section
+    parsedSections.forEach((section) => {
+      const card = createSectionCard(section);
+      parsedSectionsList.appendChild(card);
     });
   }
 
-  // Analyze the lyrics
-  const analysis = analyzeLyrics(lyrics);
+  // Helper function to reset all outputs back to defaults
+  function resetResults() {
+    // Reset the number fields
+    lineCount.textContent = "0";
+    nonEmptyLineCount.textContent = "0";
+    wordCount.textContent = "0";
+    characterCount.textContent = "0";
+    characterCountNoSpaces.textContent = "0";
+    averageWordsPerLine.textContent = "0";
+    longestLineLength.textContent = "0";
+    sectionCount.textContent = "0";
 
-  // Send the result back as JSON
-  res.json(analysis);
-});
+    // Remove previous detected section items
+    sectionsList.innerHTML = "";
 
-// Start the server
-app.listen(PORT, () => {
-  // Log a startup message
-  console.log(`Server running on port ${PORT}`);
+    // Show the default empty state for detected sections
+    sectionsEmpty.style.display = "block";
+    sectionsEmpty.textContent = "No sections detected yet.";
+
+    // Reset the longest line output
+    longestLineText.textContent = "Nothing analyzed yet.";
+
+    // Reset the parsed sections panel
+    parsedSectionsList.innerHTML = "";
+    sectionsPanelMessage.textContent = "Analyze your lyrics to turn detected sections into draggable cards.";
+
+    // Reset the status message
+    statusMessage.textContent = "Enter some lyrics and click Analyze.";
+  }
+
+  // Helper function to display all returned analysis data
+  function displayResults(data) {
+    // Fill in the stat cards with returned values
+    lineCount.textContent = data.lineCount;
+    nonEmptyLineCount.textContent = data.nonEmptyLineCount;
+    wordCount.textContent = data.wordCount;
+    characterCount.textContent = data.characterCount;
+    characterCountNoSpaces.textContent = data.characterCountNoSpaces;
+    averageWordsPerLine.textContent = data.averageWordsPerLine;
+    longestLineLength.textContent = data.longestLineLength;
+    sectionCount.textContent = data.sectionCount;
+
+    // Show the longest line or fallback text
+    if (data.longestLine && data.longestLine.trim() !== "") {
+      longestLineText.textContent = data.longestLine;
+    } else {
+      longestLineText.textContent = "No longest line found yet.";
+    }
+
+    // Clear old section list items
+    sectionsList.innerHTML = "";
+
+    // Show detected section labels if any were found
+    if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
+      sectionsEmpty.style.display = "none";
+
+      data.detectedSections.forEach((section) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = section;
+        sectionsList.appendChild(listItem);
+      });
+    } else {
+      sectionsEmpty.style.display = "block";
+      sectionsEmpty.textContent = "No section labels were detected.";
+    }
+
+    // Render the parsed sections panel
+    renderParsedSections(data.parsedSections);
+
+    // Update the status message
+    statusMessage.textContent = "Analysis complete.";
+  }
+
+  // Add click behavior to every label button
+  labelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      // Read the label text from the button's data attribute
+      const label = button.dataset.label;
+
+      // Insert the label into the textarea
+      insertAtCursor(label);
+    });
+  });
+
+  // Listen for form submission
+  lyricsForm.addEventListener("submit", async (event) => {
+    // Prevent the normal browser page reload
+    event.preventDefault();
+
+    // Read the current lyrics from the textarea
+    const lyrics = lyricsInput.value;
+
+    // Stop early if the textarea is empty
+    if (!lyrics.trim()) {
+      resetResults();
+      statusMessage.textContent = "Please enter some lyrics before analyzing.";
+      return;
+    }
+
+    // Show a working message
+    statusMessage.textContent = "Analyzing lyrics...";
+
+    try {
+      // Send the lyrics to the backend
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ lyrics })
+      });
+
+      // Throw an error if the server did not return success
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      // Turn the server response into JavaScript data
+      const data = await response.json();
+
+      // Put the result on the page
+      displayResults(data);
+    } catch (error) {
+      // Show an error to the user
+      statusMessage.textContent = "Something went wrong while analyzing your lyrics.";
+
+      // Log the technical error for debugging
+      console.error("Analysis error:", error);
+
+      // Reset the visible outputs
+      resetResults();
+    }
+  });
+
+  // Listen for clicks on the Clear button
+  clearButton.addEventListener("click", () => {
+    // Clear the textarea
+    lyricsInput.value = "";
+
+    // Reset all output areas
+    resetResults();
+
+    // Put focus back into the textarea
+    lyricsInput.focus();
+  });
+
+  // Set the page to its default state on first load
+  resetResults();
 });
