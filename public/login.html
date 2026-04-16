@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Set the character encoding for the page -->
+  <meta charset="UTF-8">
+
+  <!-- Make the page responsive on phones and tablets -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Title shown in the browser tab -->
+  <title>Login | Lyrics Tool</title>
+
+  <!-- Load the same shared stylesheet used by the app -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Main wrapper for the login page -->
+  <main class="login-page">
+    <!-- Card that contains the login form -->
+    <section class="login-card">
+      <!-- Main heading for the page -->
+      <h1>Lyrics Tool Login</h1>
+
+      <!-- Short explanation for the user -->
+      <p>Enter the shared password to access the tool.</p>
+
+      <!-- Error message area, hidden by default -->
+      <p id="login-error" class="login-error" style="display: none;">
+        Incorrect password. Please try again.
+      </p>
+
+      <!-- Login form that submits to the Express /login route -->
+      <form action="/login" method="POST">
+        <!-- Label for the password field -->
+        <label for="password">Password</label>
+
+        <!-- Password field where the user types the shared password -->
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter password"
+          autocomplete="current-password"
+          required
+        >
+
+        <!-- Submit button that sends the form to the server -->
+        <button type="submit">Log In</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    // Read the current page URL query string
+    const params = new URLSearchParams(window.location.search);
+
+    // If the server redirected back with ?error=1,
+    // show the hidden login error message
+    if (params.get("error") === "1") {
+      document.getElementById("login-error").style.display = "block";
+    }
+  </script>
+</body>
+</html>
