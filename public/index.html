@@ -18,7 +18,7 @@
   <main class="app">
     <!-- Top bar for the app title area and logout link -->
     <header class="app-header">
-      <!-- Left side of the top bar -->
+      <!-- Left side of the header -->
       <div>
         <!-- Main page heading -->
         <h1>Lyrics Tool</h1>
@@ -26,27 +26,41 @@
         <!-- Short explanation of what this tool does -->
         <p class="app-subtitle">
           Paste or write your lyrics below, then analyze them for line count,
-          word count, section labels, and more.
+          word count, detected sections, and draggable section blocks.
         </p>
       </div>
 
-      <!-- Logout link that sends the user to the server logout route -->
+      <!-- Logout link that sends the user to the logout route -->
       <a href="/logout" class="button-link secondary-btn">Log Out</a>
     </header>
 
-    <!-- Main tool area -->
+    <!-- Main two-column tool layout -->
     <section class="tool-panel">
-      <!-- Form area for entering lyrics -->
-      <form id="lyrics-form">
-        <!-- Label connected to the textarea for accessibility -->
-        <label for="lyrics-input">Your lyrics</label>
+      <!-- Left side: input area -->
+      <section class="input-column">
+        <!-- Form area for entering lyrics -->
+        <form id="lyrics-form">
+          <!-- Label connected to the textarea for accessibility -->
+          <label for="lyrics-input">Your lyrics</label>
 
-        <!-- Multi-line text box where the user types lyrics -->
-        <textarea
-          id="lyrics-input"
-          name="lyrics"
-          rows="16"
-          placeholder="Example:
+          <!-- Toolbar of quick section label buttons -->
+          <div class="label-toolbar" aria-label="Insert section labels">
+            <!-- Each button inserts a section label into the textarea -->
+            <button type="button" class="label-btn" data-label="Verse">Verse</button>
+            <button type="button" class="label-btn" data-label="Chorus">Chorus</button>
+            <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
+            <button type="button" class="label-btn" data-label="Hook">Hook</button>
+            <button type="button" class="label-btn" data-label="Intro">Intro</button>
+            <button type="button" class="label-btn" data-label="Outro">Outro</button>
+            <button type="button" class="label-btn" data-label="Pre-Chorus">Pre-Chorus</button>
+          </div>
+
+          <!-- Multi-line text box where the user types lyrics -->
+          <textarea
+            id="lyrics-input"
+            name="lyrics"
+            rows="16"
+            placeholder="Example:
 Verse 1
 I was walking through the midnight rain
 Trying to find my way back home
@@ -54,20 +68,35 @@ Trying to find my way back home
 Chorus
 You were the fire in the dark
 The echo in my heart"
-          required
-        ></textarea>
+            required
+          ></textarea>
 
-        <!-- Button row -->
-        <div class="button-row">
-          <!-- Button to send the lyrics to the server for analysis -->
-          <button type="submit" id="analyze-btn">Analyze</button>
+          <!-- Row of main action buttons -->
+          <div class="button-row">
+            <!-- Button to send the lyrics to the server for analysis -->
+            <button type="submit" id="analyze-btn">Analyze</button>
 
-          <!-- Button to clear the textarea and results -->
-          <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
-        </div>
-      </form>
+            <!-- Button to clear the textarea and results -->
+            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
+          </div>
+        </form>
 
-      <!-- Results area -->
+        <!-- Parsed sections panel -->
+        <section class="sections-panel">
+          <!-- Heading for the parsed sections area -->
+          <h2>Sections</h2>
+
+          <!-- Helper text for the user -->
+          <p id="sections-panel-message">
+            Analyze your lyrics to turn detected sections into draggable cards.
+          </p>
+
+          <!-- Container where JavaScript will insert draggable section cards -->
+          <div id="parsed-sections-list" class="parsed-sections-list"></div>
+        </section>
+      </section>
+
+      <!-- Right side: results area -->
       <section class="results-panel" aria-live="polite">
         <!-- Section heading for the analysis results -->
         <h2>Analysis Results</h2>
