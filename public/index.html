@@ -16,17 +16,23 @@
 <body>
   <!-- Main page wrapper -->
   <main class="app">
-    <!-- Top section with title and short description -->
-    <section class="hero">
-      <!-- Main page heading -->
-      <h1>Lyrics Tool</h1>
+    <!-- Top bar for the app title area and logout link -->
+    <header class="app-header">
+      <!-- Left side of the top bar -->
+      <div>
+        <!-- Main page heading -->
+        <h1>Lyrics Tool</h1>
 
-      <!-- Short explanation of what this tool does -->
-      <p>
-        Paste or write your lyrics below, then analyze them for line count,
-        word count, section labels, and more.
-      </p>
-    </section>
+        <!-- Short explanation of what this tool does -->
+        <p class="app-subtitle">
+          Paste or write your lyrics below, then analyze them for line count,
+          word count, section labels, and more.
+        </p>
+      </div>
+
+      <!-- Logout link that sends the user to the server logout route -->
+      <a href="/logout" class="button-link secondary-btn">Log Out</a>
+    </header>
 
     <!-- Main tool area -->
     <section class="tool-panel">
