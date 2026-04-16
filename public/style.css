@@ -18,19 +18,43 @@ body {
   padding: 32px 20px;
 }
 
-/* Add spacing below the intro area */
+/* Header area at the top of the app with title on the left and logout on the right */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Main heading inside the app header */
+.app-header h1 {
+  margin: 0 0 8px 0;
+  font-size: 2rem;
+  color: #102a43;
+}
+
+/* Smaller descriptive text under the main title */
+.app-subtitle {
+  margin: 0;
+  color: #486581;
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+/* Older hero wrapper support in case you reuse it elsewhere */
 .hero {
   margin-bottom: 24px;
 }
 
-/* Style the main app title */
+/* Older hero title support */
 .hero h1 {
   margin-bottom: 8px;
   font-size: 2rem;
   color: #102a43;
 }
 
-/* Style the intro text */
+/* Older hero paragraph support */
 .hero p {
   margin: 0;
   color: #486581;
@@ -97,7 +121,7 @@ input[type="password"]:focus {
   flex-wrap: wrap;
 }
 
-/* Shared button styling */
+/* Shared styling for buttons and links that should look like buttons */
 button,
 .button-link {
   border: none;
@@ -109,6 +133,7 @@ button,
   transition: background 0.2s ease, transform 0.1s ease;
   text-decoration: none;
   display: inline-block;
+  text-align: center;
 }
 
 /* Main submit button */
@@ -117,23 +142,23 @@ button[type="submit"] {
   color: #ffffff;
 }
 
-/* Hover style for main button */
+/* Hover style for main action button */
 button[type="submit"]:hover {
   background: #186faf;
 }
 
-/* Secondary button style */
+/* Secondary button and link style */
 .secondary-btn {
   background: #d9e2ec;
   color: #102a43;
 }
 
-/* Hover style for secondary button */
+/* Hover style for secondary button and link */
 .secondary-btn:hover {
   background: #bcccdc;
 }
 
-/* Small click effect */
+/* Small press-down effect when clicked */
 button:active,
 .button-link:active {
   transform: translateY(1px);
@@ -250,12 +275,12 @@ button:active,
   line-height: 1.6;
 }
 
-/* Add spacing between login form fields */
+/* Add spacing before the login form */
 .login-card form {
   margin-top: 18px;
 }
 
-/* Make the login button full width for a cleaner look */
+/* Make the login button full width */
 .login-card button {
   width: 100%;
   margin-top: 16px;
@@ -272,14 +297,19 @@ button:active,
   margin-bottom: 0;
 }
 
-/* Responsive change: stack the app layout into one column on medium screens */
+/* Stack the main header vertically on narrower screens */
 @media (max-width: 900px) {
   .tool-panel {
     grid-template-columns: 1fr;
   }
+
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
-/* Responsive change: stack stat cards into one column on smaller screens */
+/* Reduce padding and stack stat cards on smaller screens */
 @media (max-width: 600px) {
   .stats-grid {
     grid-template-columns: 1fr;
