@@ -1,18 +1,20 @@
-// Wait until the HTML page has fully loaded before running our code
-document.addEventListener("DOMContentLoaded", () => {
-  // Get the form element so we can listen for the Analyze button click
+function initializeLyricsTool() {
+  // Prevent double initialization
+  if (window.__lyricsToolInitialized) {
+    return;
+  }
+  window.__lyricsToolInitialized = true;
+
+  // Core app elements
   const lyricsForm = document.getElementById("lyrics-form");
-
-  // Get the textarea where the user types or pastes lyrics
   const lyricsInput = document.getElementById("lyrics-input");
-
-  // Get the Clear button so we can erase the form and results
   const clearButton = document.getElementById("clear-btn");
-
-  // Get the status message area so we can show helpful messages
   const statusMessage = document.getElementById("status-message");
+  const labelButtons = document.querySelectorAll(".label-btn");
 
-  // Get each result field so we can update them after analysis
+  const parsedSectionsList = document.getElementById("parsed-sections-list");
+  const sectionsPanelMessage = document.getElementById("sections-panel-message");
+
   const lineCount = document.getElementById("line-count");
   const nonEmptyLineCount = document.getElementById("non-empty-line-count");
   const wordCount = document.getElementById("word-count");
@@ -22,152 +24,281 @@ document.addEventListener("DOMContentLoaded", () => {
   const longestLineLength = document.getElementById("longest-line-length");
   const sectionCount = document.getElementById("section-count");
 
-  // Get the areas used for extra detail output
   const sectionsEmpty = document.getElementById("sections-empty");
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
-  // Create a helper function to reset the results back to zero/defaults
+  // If this is not the app page, stop quietly
+  if (!lyricsForm || !lyricsInput || !statusMessage) {
+    return;
+  }
+
+  let draggedCard = null;
+
+  function insertAtCursor(textToInsert) {
+    const start = lyricsInput.selectionStart ?? 0;
+    const end = lyricsInput.selectionEnd ?? 0;
+
+    const before = lyricsInput.value.slice(0, start);
+    const after = lyricsInput.value.slice(end);
+
+    const needsLeadingBreaks = before.length > 0 && !before.endsWith("\n");
+    const prefix = needsLeadingBreaks ? "\n\n" : "";
+    const insertion = `${prefix}${textToInsert}\n`;
+
+    lyricsInput.value = before + insertion + after;
+
+    const newPosition = (before + insertion).length;
+    lyricsInput.focus();
+    lyricsInput.setSelectionRange(newPosition, newPosition);
+  }
+
+  function syncTextareaFromCards() {
+    if (!parsedSectionsList) {
+      return;
+    }
+
+    const cards = Array.from(parsedSectionsList.querySelectorAll(".section-card"));
+
+    if (cards.length === 0) {
+      return;
+    }
+
+    const rebuiltText = cards
+      .map((card) => {
+        const label = card.dataset.label || "";
+        const content = card.dataset.content || "";
+
+        if (label === "Unlabeled") {
+          return content.trim();
+        }
+
+        return `${label}\n${content.trim()}`.trim();
+      })
+      .filter((block) => block !== "")
+      .join("\n\n");
+
+    lyricsInput.value = rebuiltText;
+  }
+
+  function createSectionCard(section) {
+    const card = document.createElement("article");
+    card.className = "section-card";
+    card.draggable = true;
+    card.dataset.sectionId = section.id || "";
+    card.dataset.label = section.label || "Unlabeled";
+    card.dataset.content = section.content || "";
+
+    const cardHeader = document.createElement("div");
+    cardHeader.className = "section-card-header";
+
+    const title = document.createElement("h3");
+    title.textContent = section.label || "Unlabeled";
+
+    const handle = document.createElement("span");
+    handle.className = "drag-handle";
+    handle.textContent = "Drag";
+
+    cardHeader.appendChild(title);
+    cardHeader.appendChild(handle);
+
+    const body = document.createElement("pre");
+    body.className = "section-card-content";
+    body.textContent = section.content || "(No lines in this section)";
+
+    card.appendChild(cardHeader);
+    card.appendChild(body);
+
+    card.addEventListener("dragstart", () => {
+      draggedCard = card;
+      card.classList.add("dragging");
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedCard = null;
+      syncTextareaFromCards();
+
+      if (sectionsPanelMessage) {
+        sectionsPanelMessage.textContent =
+          "Section order updated. The textarea now matches the card order.";
+      }
+    });
+
+    card.addEventListener("dragover", (event) => {
+      event.preventDefault();
+
+      if (!draggedCard || draggedCard === card || !parsedSectionsList) {
+        return;
+      }
+
+      parsedSectionsList.insertBefore(draggedCard, card);
+    });
+
+    return card;
+  }
+
+  function renderParsedSections(parsedSections) {
+    if (!parsedSectionsList || !sectionsPanelMessage) {
+      return;
+    }
+
+    parsedSectionsList.innerHTML = "";
+
+    if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
+      sectionsPanelMessage.textContent =
+        "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
+      return;
+    }
+
+    sectionsPanelMessage.textContent =
+      "Drag section cards to reorder them. The textarea will update automatically.";
+
+    parsedSections.forEach((section) => {
+      parsedSectionsList.appendChild(createSectionCard(section));
+    });
+  }
+
   function resetResults() {
-    // Set all numeric result areas back to zero
-    lineCount.textContent = "0";
-    nonEmptyLineCount.textContent = "0";
-    wordCount.textContent = "0";
-    characterCount.textContent = "0";
-    characterCountNoSpaces.textContent = "0";
-    averageWordsPerLine.textContent = "0";
-    longestLineLength.textContent = "0";
-    sectionCount.textContent = "0";
+    if (lineCount) lineCount.textContent = "0";
+    if (nonEmptyLineCount) nonEmptyLineCount.textContent = "0";
+    if (wordCount) wordCount.textContent = "0";
+    if (characterCount) characterCount.textContent = "0";
+    if (characterCountNoSpaces) characterCountNoSpaces.textContent = "0";
+    if (averageWordsPerLine) averageWordsPerLine.textContent = "0";
+    if (longestLineLength) longestLineLength.textContent = "0";
+    if (sectionCount) sectionCount.textContent = "0";
 
-    // Clear out any old list items from the detected sections list
-    sectionsList.innerHTML = "";
+    if (sectionsList) {
+      sectionsList.innerHTML = "";
+    }
 
-    // Show the empty-state text again
-    sectionsEmpty.style.display = "block";
-    sectionsEmpty.textContent = "No sections detected yet.";
+    if (sectionsEmpty) {
+      sectionsEmpty.style.display = "block";
+      sectionsEmpty.textContent = "No sections detected yet.";
+    }
 
-    // Reset the longest line display
-    longestLineText.textContent = "Nothing analyzed yet.";
+    if (longestLineText) {
+      longestLineText.textContent = "Nothing analyzed yet.";
+    }
 
-    // Reset the status message
+    if (parsedSectionsList) {
+      parsedSectionsList.innerHTML = "";
+    }
+
+    if (sectionsPanelMessage) {
+      sectionsPanelMessage.textContent =
+        "Analyze your lyrics to turn detected sections into draggable cards.";
+    }
+
     statusMessage.textContent = "Enter some lyrics and click Analyze.";
   }
 
-  // Create a helper function that fills the page with analysis results
   function displayResults(data) {
-    // Put the returned numbers into the correct result boxes
-    lineCount.textContent = data.lineCount;
-    nonEmptyLineCount.textContent = data.nonEmptyLineCount;
-    wordCount.textContent = data.wordCount;
-    characterCount.textContent = data.characterCount;
-    characterCountNoSpaces.textContent = data.characterCountNoSpaces;
-    averageWordsPerLine.textContent = data.averageWordsPerLine;
-    longestLineLength.textContent = data.longestLineLength;
-    sectionCount.textContent = data.sectionCount;
+    if (lineCount) lineCount.textContent = data.lineCount ?? "0";
+    if (nonEmptyLineCount) nonEmptyLineCount.textContent = data.nonEmptyLineCount ?? "0";
+    if (wordCount) wordCount.textContent = data.wordCount ?? "0";
+    if (characterCount) characterCount.textContent = data.characterCount ?? "0";
+    if (characterCountNoSpaces) {
+      characterCountNoSpaces.textContent = data.characterCountNoSpaces ?? "0";
+    }
+    if (averageWordsPerLine) {
+      averageWordsPerLine.textContent = data.averageWordsPerLine ?? "0";
+    }
+    if (longestLineLength) {
+      longestLineLength.textContent = data.longestLineLength ?? "0";
+    }
+    if (sectionCount) sectionCount.textContent = data.sectionCount ?? "0";
 
-    // Show the longest line if one exists, otherwise show a fallback message
-    if (data.longestLine && data.longestLine.trim() !== "") {
-      longestLineText.textContent = data.longestLine;
-    } else {
-      longestLineText.textContent = "No longest line found yet.";
+    if (longestLineText) {
+      longestLineText.textContent =
+        data.longestLine && data.longestLine.trim() !== ""
+          ? data.longestLine
+          : "No longest line found yet.";
     }
 
-    // Clear any old section items before adding new ones
-    sectionsList.innerHTML = "";
+    if (sectionsList) {
+      sectionsList.innerHTML = "";
+    }
 
-    // If the server found section labels, show them in a list
     if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
-      // Hide the empty-state message
-      sectionsEmpty.style.display = "none";
+      if (sectionsEmpty) {
+        sectionsEmpty.style.display = "none";
+      }
 
-      // Loop through each section label returned by the server
-      data.detectedSections.forEach((section) => {
-        // Create a new list item
-        const listItem = document.createElement("li");
-
-        // Put the section text into the list item
-        listItem.textContent = section;
-
-        // Add the list item to the unordered list on the page
-        sectionsList.appendChild(listItem);
-      });
-    } else {
-      // If no sections were found, show the empty-state message
+      if (sectionsList) {
+        data.detectedSections.forEach((section) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = section;
+          sectionsList.appendChild(listItem);
+        });
+      }
+    } else if (sectionsEmpty) {
       sectionsEmpty.style.display = "block";
       sectionsEmpty.textContent = "No section labels were detected.";
     }
 
-    // Update the status message to show success
+    renderParsedSections(data.parsedSections);
     statusMessage.textContent = "Analysis complete.";
   }
 
-  // Listen for the form being submitted
+  labelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const label = button.dataset.label;
+      if (label) {
+        insertAtCursor(label);
+      }
+    });
+  });
+
   lyricsForm.addEventListener("submit", async (event) => {
-    // Stop the browser from reloading the page when the form submits
     event.preventDefault();
 
-    // Read the current text from the textarea
     const lyrics = lyricsInput.value;
 
-    // If the textarea is empty or only spaces, show a message and stop
     if (!lyrics.trim()) {
-      statusMessage.textContent = "Please enter some lyrics before analyzing.";
       resetResults();
+      statusMessage.textContent = "Please enter some lyrics before analyzing.";
       return;
     }
 
-    // Let the user know the app is working
     statusMessage.textContent = "Analyzing lyrics...";
 
     try {
-      // Send the lyrics text to our Express backend as JSON
       const response = await fetch("/api/analyze", {
-        // Tell fetch we want to make a POST request
         method: "POST",
-
-        // Tell the server we are sending JSON
         headers: {
           "Content-Type": "application/json"
         },
-
-        // Convert our JavaScript object into a JSON string
         body: JSON.stringify({ lyrics })
       });
 
-      // If the server response is not successful, throw an error
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
       }
 
-      // Convert the JSON response from the server into a JavaScript object
       const data = await response.json();
-
-      // Put the returned analysis data onto the page
       displayResults(data);
     } catch (error) {
-      // If anything fails, show an error message to the user
-      statusMessage.textContent = "Something went wrong while analyzing your lyrics.";
-
-      // Write the actual error into the browser console for debugging
       console.error("Analysis error:", error);
-
-      // Clear old results so the page does not show stale data
-      resetResults();
+      statusMessage.textContent =
+        "Something went wrong while analyzing your lyrics. Check the browser console.";
     }
   });
 
-  // Listen for clicks on the Clear button
-  clearButton.addEventListener("click", () => {
-    // Clear the textarea
-    lyricsInput.value = "";
+  if (clearButton) {
+    clearButton.addEventListener("click", () => {
+      lyricsInput.value = "";
+      resetResults();
+      lyricsInput.focus();
+    });
+  }
 
-    // Reset all result areas
-    resetResults();
-
-    // Put the cursor back into the textarea for convenience
-    lyricsInput.focus();
-  });
-
-  // Run the reset once when the page first loads
   resetResults();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeLyricsTool);
+} else {
+  initializeLyricsTool();
+}
