@@ -1,20 +1,98 @@
 const express = require("express");
 const path = require("path");
+const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const APP_PASSWORD = process.env.APP_PASSWORD || "changeme123";
+const SESSION_SECRET = process.env.SESSION_SECRET || "replace-this-session-secret";
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+app.use(
+  session({
+    name: "lyrics_tool_session",
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 12
+    }
+  })
+);
+
+function requireAuth(req, res, next) {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+
+  return res.redirect("/login");
+}
+
+function requireApiAuth(req, res, next) {
+  if (req.session && req.session.authenticated) {
+    return next();
+  }
+
+  return res.status(401).json({ error: "Authentication required" });
+}
+
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/api/analyze", (req, res) => {
+app.get("/login", (req, res) => {
+  if (req.session && req.session.authenticated) {
+    return res.redirect("/");
+  }
+
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.post("/login", (req, res, next) => {
+  const password = (req.body.password || "").trim();
+
+  if (password !== APP_PASSWORD) {
+    return res.redirect("/login?error=1");
+  }
+
+  req.session.regenerate((err) => {
+    if (err) {
+      return next(err);
+    }
+
+    req.session.authenticated = true;
+
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        return next(saveErr);
+      }
+
+      return res.redirect("/");
+    });
+  });
+});
+
+app.post("/logout", (req, res, next) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return next(err);
+    }
+
+    res.clearCookie("lyrics_tool_session");
+    return res.redirect("/login");
+  });
+});
+
+app.post("/api/analyze", requireApiAuth, (req, res) => {
   const lyrics = req.body.lyrics || "";
 
   const lines = lyrics.split(/\r?\n/);
   const nonEmptyLines = lines.filter((line) => line.trim() !== "");
   const words = lyrics.trim() ? lyrics.trim().split(/\s+/) : [];
-  const characterCount = lyrics.length;
-  const characterCountNoSpaces = lyrics.replace(/\s/g, "").length;
 
   const sectionPattern = /^(verse|chorus|pre-chorus|bridge|outro|intro)(.*)?$/i;
   const detectedSections = [];
@@ -71,25 +149,17 @@ app.post("/api/analyze", (req, res) => {
 
   res.json({
     lineCount: lines.length,
-    nonEmptyLineCount: nonEmptyLines.length,
     wordCount: words.length,
-    characterCount,
-    characterCountNoSpaces,
     averageWordsPerLine:
       nonEmptyLines.length > 0 ? (words.length / nonEmptyLines.length).toFixed(2) : "0",
-    longestLineLength: longestLine.length,
-    longestLine,
     sectionCount: parsedSections.length,
+    longestLine,
     detectedSections,
     parsedSections
   });
 });
 
-app.get("/logout", (req, res) => {
-  res.redirect("/");
-});
-
-app.get("/", (req, res) => {
+app.get("/", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
