@@ -9,10 +9,48 @@ body {
   color: #1f2933;
 }
 
-.app {
+.app,
+.login-page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 32px 20px;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.login-card h1 {
+  margin: 0 0 8px 0;
+  color: #102a43;
+}
+
+.login-subtitle {
+  margin: 0 0 18px 0;
+  color: #486581;
+  line-height: 1.6;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-error {
+  margin-top: 14px;
+  color: #b42318;
+  font-weight: 700;
 }
 
 .app-header {
@@ -34,6 +72,10 @@ body {
   color: #486581;
   line-height: 1.6;
   max-width: 720px;
+}
+
+.logout-form {
+  margin: 0;
 }
 
 .tool-panel {
@@ -88,7 +130,10 @@ label {
   border-color: #9fb3c8;
 }
 
-.label-btn:focus {
+.label-btn:focus,
+button:focus,
+input:focus,
+textarea:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.15);
 }
@@ -112,9 +157,7 @@ textarea {
 
 textarea:focus,
 input[type="password"]:focus {
-  outline: none;
   border-color: #2680c2;
-  box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.15);
 }
 
 .button-row {
@@ -320,7 +363,8 @@ button:active,
     grid-template-columns: 1fr;
   }
 
-  .app {
+  .app,
+  .login-page {
     padding: 20px 14px;
   }
 
