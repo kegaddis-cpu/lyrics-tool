@@ -1,16 +1,14 @@
 function initializeLyricsTool() {
-  // Prevent double initialization
   if (window.__lyricsToolInitialized) {
     return;
   }
   window.__lyricsToolInitialized = true;
 
-  // Core app elements
   const lyricsForm = document.getElementById("lyrics-form");
   const lyricsInput = document.getElementById("lyrics-input");
   const clearButton = document.getElementById("clear-btn");
   const statusMessage = document.getElementById("status-message");
-  const labelButtons = document.querySelectorAll(".label-btn");
+  const labelToolbar = document.querySelector(".label-toolbar");
 
   const parsedSectionsList = document.getElementById("parsed-sections-list");
   const sectionsPanelMessage = document.getElementById("sections-panel-message");
@@ -28,7 +26,6 @@ function initializeLyricsTool() {
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
-  // If this is not the app page, stop quietly
   if (!lyricsForm || !lyricsInput || !statusMessage) {
     return;
   }
@@ -242,14 +239,22 @@ function initializeLyricsTool() {
     statusMessage.textContent = "Analysis complete.";
   }
 
-  labelButtons.forEach((button) => {
-    button.addEventListener("click", () => {
+  if (labelToolbar) {
+    labelToolbar.addEventListener("click", (event) => {
+      const button = event.target.closest(".label-btn");
+
+      if (!button || !labelToolbar.contains(button)) {
+        return;
+      }
+
+      event.preventDefault();
+
       const label = button.dataset.label;
       if (label) {
         insertAtCursor(label);
       }
     });
-  });
+  }
 
   lyricsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
