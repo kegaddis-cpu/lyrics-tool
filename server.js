@@ -1,218 +1,95 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const lyricsForm = document.getElementById("lyrics-form");
-  const lyricsInput = document.getElementById("lyrics-input");
-  const clearButton = document.getElementById("clear-btn");
-  const statusMessage = document.getElementById("status-message");
-  const labelButtons = document.querySelectorAll(".label-btn");
+const express = require("express");
+const path = require("path");
 
-  const parsedSectionsList = document.getElementById("parsed-sections-list");
-  const sectionsPanelMessage = document.getElementById("sections-panel-message");
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-  const lineCount = document.getElementById("line-count");
-  const nonEmptyLineCount = document.getElementById("non-empty-line-count");
-  const wordCount = document.getElementById("word-count");
-  const characterCount = document.getElementById("character-count");
-  const characterCountNoSpaces = document.getElementById("character-count-no-spaces");
-  const averageWordsPerLine = document.getElementById("average-words-per-line");
-  const longestLineLength = document.getElementById("longest-line-length");
-  const sectionCount = document.getElementById("section-count");
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-  const sectionsEmpty = document.getElementById("sections-empty");
-  const sectionsList = document.getElementById("sections-list");
-  const longestLineText = document.getElementById("longest-line-text");
+app.post("/api/analyze", (req, res) => {
+  const lyrics = req.body.lyrics || "";
 
-  let draggedCard = null;
+  const lines = lyrics.split(/\r?\n/);
+  const nonEmptyLines = lines.filter((line) => line.trim() !== "");
+  const words = lyrics.trim() ? lyrics.trim().split(/\s+/) : [];
+  const characterCount = lyrics.length;
+  const characterCountNoSpaces = lyrics.replace(/\s/g, "").length;
 
-  function insertAtCursor(textToInsert) {
-    const start = lyricsInput.selectionStart;
-    const end = lyricsInput.selectionEnd;
+  const detectedSections = [];
+  const parsedSections = [];
 
-    const before = lyricsInput.value.slice(0, start);
-    const after = lyricsInput.value.slice(end);
+  const sectionPattern = /^(verse|chorus|pre-chorus|bridge|outro|intro)(.*)?$/i;
 
-    const prefix = before && !before.endsWith("\n") ? "\n\n" : "";
-    const insertion = `${prefix}${textToInsert}\n`;
+  let currentSection = null;
+  let unlabeledBuffer = [];
 
-    lyricsInput.value = before + insertion + after;
+  lines.forEach((line, index) => {
+    const trimmed = line.trim();
+    const isSectionLabel = sectionPattern.test(trimmed);
 
-    const newPosition = (before + insertion).length;
-    lyricsInput.focus();
-    lyricsInput.setSelectionRange(newPosition, newPosition);
-  }
-
-  function createSectionCard(section) {
-    const card = document.createElement("article");
-    card.className = "section-card";
-    card.draggable = true;
-    card.dataset.sectionId = section.id;
-
-    const cardHeader = document.createElement("div");
-    cardHeader.className = "section-card-header";
-
-    const title = document.createElement("h3");
-    title.textContent = section.label;
-
-    const handle = document.createElement("span");
-    handle.className = "drag-handle";
-    handle.textContent = "Drag";
-
-    cardHeader.appendChild(title);
-    cardHeader.appendChild(handle);
-
-    const body = document.createElement("pre");
-    body.className = "section-card-content";
-    body.textContent = section.content || "(No lines in this section)";
-
-    card.appendChild(cardHeader);
-    card.appendChild(body);
-
-    card.addEventListener("dragstart", () => {
-      draggedCard = card;
-      card.classList.add("dragging");
-    });
-
-    card.addEventListener("dragend", () => {
-      card.classList.remove("dragging");
-      draggedCard = null;
-    });
-
-    card.addEventListener("dragover", (event) => {
-      event.preventDefault();
-
-      if (!draggedCard || draggedCard === card) {
-        return;
+    if (isSectionLabel) {
+      if (currentSection) {
+        parsedSections.push(currentSection);
+      } else if (unlabeledBuffer.length > 0) {
+        parsedSections.push({
+          id: `section-${parsedSections.length + 1}`,
+          label: "Unlabeled",
+          content: unlabeledBuffer.join("\n").trim()
+        });
+        unlabeledBuffer = [];
       }
 
-      parsedSectionsList.insertBefore(draggedCard, card);
-    });
+      detectedSections.push(trimmed);
 
-    return card;
-  }
-
-  function renderParsedSections(parsedSections) {
-    parsedSectionsList.innerHTML = "";
-
-    if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
-      sectionsPanelMessage.textContent =
-        "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
-      return;
-    }
-
-    sectionsPanelMessage.textContent =
-      "Drag section cards to experiment with order.";
-
-    parsedSections.forEach((section) => {
-      const card = createSectionCard(section);
-      parsedSectionsList.appendChild(card);
-    });
-  }
-
-  function resetResults() {
-    lineCount.textContent = "0";
-    nonEmptyLineCount.textContent = "0";
-    wordCount.textContent = "0";
-    characterCount.textContent = "0";
-    characterCountNoSpaces.textContent = "0";
-    averageWordsPerLine.textContent = "0";
-    longestLineLength.textContent = "0";
-    sectionCount.textContent = "0";
-
-    sectionsList.innerHTML = "";
-
-    sectionsEmpty.style.display = "block";
-    sectionsEmpty.textContent = "No sections detected yet.";
-
-    longestLineText.textContent = "Nothing analyzed yet.";
-
-    parsedSectionsList.innerHTML = "";
-    sectionsPanelMessage.textContent =
-      "Analyze your lyrics to turn detected sections into draggable cards.";
-
-    statusMessage.textContent = "Enter some lyrics and click Analyze.";
-  }
-
-  function displayResults(data) {
-    lineCount.textContent = data.lineCount;
-    nonEmptyLineCount.textContent = data.nonEmptyLineCount;
-    wordCount.textContent = data.wordCount;
-    characterCount.textContent = data.characterCount;
-    characterCountNoSpaces.textContent = data.characterCountNoSpaces;
-    averageWordsPerLine.textContent = data.averageWordsPerLine;
-    longestLineLength.textContent = data.longestLineLength;
-    sectionCount.textContent = data.sectionCount;
-
-    if (data.longestLine && data.longestLine.trim() !== "") {
-      longestLineText.textContent = data.longestLine;
+      currentSection = {
+        id: `section-${parsedSections.length + 1}`,
+        label: trimmed,
+        content: ""
+      };
     } else {
-      longestLineText.textContent = "No longest line found yet.";
-    }
-
-    sectionsList.innerHTML = "";
-
-    if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
-      sectionsEmpty.style.display = "none";
-
-      data.detectedSections.forEach((section) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = section;
-        sectionsList.appendChild(listItem);
-      });
-    } else {
-      sectionsEmpty.style.display = "block";
-      sectionsEmpty.textContent = "No section labels were detected.";
-    }
-
-    renderParsedSections(data.parsedSections);
-    statusMessage.textContent = "Analysis complete.";
-  }
-
-  labelButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const label = button.dataset.label;
-      insertAtCursor(label);
-    });
-  });
-
-  lyricsForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const lyrics = lyricsInput.value;
-
-    if (!lyrics.trim()) {
-      resetResults();
-      statusMessage.textContent = "Please enter some lyrics before analyzing.";
-      return;
-    }
-
-    statusMessage.textContent = "Analyzing lyrics...";
-
-    try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ lyrics })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
+      if (currentSection) {
+        currentSection.content += (currentSection.content ? "\n" : "") + line;
+      } else {
+        unlabeledBuffer.push(line);
       }
-
-      const data = await response.json();
-      displayResults(data);
-    } catch (error) {
-      statusMessage.textContent = "Something went wrong while analyzing your lyrics.";
-      console.error("Analysis error:", error);
-      resetResults();
     }
   });
 
-  clearButton.addEventListener("click", () => {
-    lyricsInput.value = "";
-    resetResults();
-    lyricsInput.focus();
-  });
+  if (currentSection) {
+    parsedSections.push(currentSection);
+  } else if (unlabeledBuffer.length > 0) {
+    parsedSections.push({
+      id: `section-${parsedSections.length + 1}`,
+      label: "Unlabeled",
+      content: unlabeledBuffer.join("\n").trim()
+    });
+  }
 
-  resetResults();
+  const longestLine = lines.reduce((longest, line) => {
+    return line.length > longest.length ? line : longest;
+  }, "");
+
+  res.json({
+    lineCount: lines.length,
+    nonEmptyLineCount: nonEmptyLines.length,
+    wordCount: words.length,
+    characterCount,
+    characterCountNoSpaces,
+    averageWordsPerLine:
+      nonEmptyLines.length > 0 ? (words.length / nonEmptyLines.length).toFixed(2) : "0",
+    longestLineLength: longestLine.length,
+    longestLine,
+    sectionCount: parsedSections.length,
+    detectedSections,
+    parsedSections
+  });
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
