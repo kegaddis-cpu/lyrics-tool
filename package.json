@@ -6,7 +6,9 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "connect-redis": "^8.0.2",
     "express": "^5.1.0",
-    "express-session": "^1.18.1"
+    "express-session": "^1.18.1",
+    "redis": "^4.7.0"
   }
 }
