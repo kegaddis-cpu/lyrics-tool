@@ -68,40 +68,65 @@ document.addEventListener("DOMContentLoaded", () => {
     lyricsInput.value = rebuiltText;
   }
 
-  function createSectionCard(section) {
-    const card = document.createElement("article");
-    card.className = "section-card";
-    card.draggable = true;
+ function createSectionCard(section) {
+  const card = document.createElement("article");
+  card.className = "section-card";
+  card.draggable = true;
 
-    card.dataset.sectionId = section.id || "";
-    card.dataset.label = section.label || "Unlabeled";
-    card.dataset.content = section.content || "";
+  card.dataset.sectionId = section.id || "";
+  card.dataset.label = section.label || "Unlabeled";
+  card.dataset.content = section.content || "";
 
-    const cardHeader = document.createElement("div");
-    cardHeader.className = "section-card-header";
+  const handle = document.createElement("span");
+  handle.className = "drag-handle";
+  handle.setAttribute("aria-hidden", "true");
+  handle.textContent = "☰";
 
-    const title = document.createElement("h3");
-    title.textContent = section.label || "Unlabeled";
+  const contentWrap = document.createElement("div");
+  contentWrap.className = "section-card-main";
 
-    const handle = document.createElement("span");
-    handle.className = "drag-handle";
-    handle.textContent = "Drag";
+  const title = document.createElement("h3");
+  title.className = "section-card-title";
+  title.textContent = section.label || "Unlabeled";
 
-    cardHeader.appendChild(title);
-    cardHeader.appendChild(handle);
+  const body = document.createElement("pre");
+  body.className = "section-card-content";
+  body.textContent = section.content || "(No lines in this section)";
 
-    const body = document.createElement("pre");
-    body.className = "section-card-content";
-    body.textContent = section.content || "(No lines in this section)";
+  contentWrap.appendChild(title);
+  contentWrap.appendChild(body);
 
-    card.appendChild(cardHeader);
-    card.appendChild(body);
+  card.appendChild(handle);
+  card.appendChild(contentWrap);
 
-    card.addEventListener("dragstart", () => {
-      draggedCard = card;
-      card.classList.add("dragging");
-    });
+  card.addEventListener("dragstart", () => {
+    draggedCard = card;
+    card.classList.add("dragging");
+  });
 
+  card.addEventListener("dragend", () => {
+    card.classList.remove("dragging");
+    draggedCard = null;
+    syncTextareaFromCards();
+
+    if (sectionsPanelMessage) {
+      sectionsPanelMessage.textContent =
+        "Section order updated. The textarea now matches the card order.";
+    }
+  });
+
+  card.addEventListener("dragover", (event) => {
+    event.preventDefault();
+
+    if (!draggedCard || draggedCard === card) {
+      return;
+    }
+
+    parsedSectionsList.insertBefore(draggedCard, card);
+  });
+
+  return card;
+}
     card.addEventListener("dragend", () => {
       card.classList.remove("dragging");
       draggedCard = null;
