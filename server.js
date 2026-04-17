@@ -144,6 +144,10 @@ app.post("/api/analyze", requireApiAuth, (req, res) => {
     });
   }
 
+  const longestLine = lines.reduce((longest, line) => {
+    return line.length > longest.length ? line : longest;
+  }, "");
+
   res.json({
     lineCount: lines.length,
     wordCount: words.length,
@@ -151,7 +155,8 @@ app.post("/api/analyze", requireApiAuth, (req, res) => {
       nonEmptyLines.length > 0 ? (words.length / nonEmptyLines.length).toFixed(2) : "0",
     sectionCount: parsedSections.length,
     detectedSections,
-    parsedSections
+    parsedSections,
+    longestLine
   });
 });
 
