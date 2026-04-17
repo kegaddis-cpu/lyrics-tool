@@ -13,13 +13,12 @@ app.post("/api/analyze", (req, res) => {
   const lines = lyrics.split(/\r?\n/);
   const nonEmptyLines = lines.filter((line) => line.trim() !== "");
   const words = lyrics.trim() ? lyrics.trim().split(/\s+/) : [];
-
   const characterCount = lyrics.length;
   const characterCountNoSpaces = lyrics.replace(/\s/g, "").length;
 
+  const sectionPattern = /^(verse|chorus|pre-chorus|bridge|outro|intro)(.*)?$/i;
   const detectedSections = [];
   const parsedSections = [];
-  const sectionPattern = /^(verse|chorus|pre-chorus|bridge|outro|intro)(.*)?$/i;
 
   let currentSection = null;
   let unlabeledBuffer = [];
