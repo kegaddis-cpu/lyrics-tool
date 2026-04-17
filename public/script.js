@@ -104,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
       card.classList.remove("dragging");
       draggedCard = null;
       syncTextareaFromCards();
-
       sectionsPanelMessage.textContent =
         "Section order updated. The textarea now matches the card order.";
     });
@@ -135,8 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "Drag section cards using the handle on the left. The textarea will update automatically.";
 
     parsedSections.forEach((section) => {
-      const card = createSectionCard(section);
-      parsedSectionsList.appendChild(card);
+      parsedSectionsList.appendChild(createSectionCard(section));
     });
   }
 
@@ -165,17 +163,15 @@ document.addEventListener("DOMContentLoaded", () => {
     averageWordsPerLine.textContent = data.averageWordsPerLine ?? "0";
     sectionCount.textContent = data.sectionCount ?? "0";
 
-    if (data.longestLine && data.longestLine.trim() !== "") {
-      longestLineText.textContent = data.longestLine;
-    } else {
-      longestLineText.textContent = "No longest line found yet.";
-    }
+    longestLineText.textContent =
+      data.longestLine && data.longestLine.trim() !== ""
+        ? data.longestLine
+        : "No longest line found yet.";
 
     sectionsList.innerHTML = "";
 
     if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
       sectionsEmpty.style.display = "none";
-
       data.detectedSections.forEach((section) => {
         const listItem = document.createElement("li");
         listItem.textContent = section;
