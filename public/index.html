@@ -3,115 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lyrics Helper</title>
+  <title>Login | Lyrics Helper</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main class="app">
-    <header class="app-header">
-      <div>
-        <h1>Lyrics Helper</h1>
-        <p class="app-subtitle">
-          Paste lyrics, add section labels, analyze structure, and reorder sections visually.
-        </p>
-      </div>
-    </header>
+  <main class="login-page">
+    <section class="login-card">
+      <h1>Lyrics Helper</h1>
+      <p class="login-subtitle">Enter the app password to continue.</p>
 
-    <section class="tool-panel">
-      <div class="input-column">
-        <form id="lyrics-form">
-          <label for="lyrics-input">Lyrics</label>
+      <form action="/login" method="POST" class="login-form">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="current-password"
+          placeholder="Enter password"
+        />
 
-          <div class="label-toolbar" aria-label="Section label shortcuts">
-            <button type="button" class="label-btn" data-label="Verse">Verse</button>
-            <button type="button" class="label-btn" data-label="Chorus">Chorus</button>
-            <button type="button" class="label-btn" data-label="Pre-Chorus">Pre-Chorus</button>
-            <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
-            <button type="button" class="label-btn" data-label="Outro">Outro</button>
-          </div>
+        <button type="submit">Log In</button>
+      </form>
 
-          <textarea
-            id="lyrics-input"
-            name="lyrics"
-            placeholder="Type or paste your lyrics here..."
-            spellcheck="true"
-          ></textarea>
-
-          <div class="button-row">
-            <button type="submit">Analyze</button>
-            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
-          </div>
-        </form>
-
-        <section class="sections-panel" aria-labelledby="sections-heading">
-          <h2 id="sections-heading">Parsed Sections</h2>
-          <p id="sections-panel-message">
-            Analyze your lyrics to turn detected sections into draggable cards.
-          </p>
-          <div id="parsed-sections-list" class="parsed-sections-list"></div>
-        </section>
-      </div>
-
-      <aside class="results-panel" aria-labelledby="results-heading">
-        <h2 id="results-heading">Analysis</h2>
-        <p id="status-message">Enter some lyrics and click Analyze.</p>
-
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Total Lines</h3>
-            <p id="line-count">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Non-Empty Lines</h3>
-            <p id="non-empty-line-count">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Word Count</h3>
-            <p id="word-count">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Characters</h3>
-            <p id="character-count">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Characters No Spaces</h3>
-            <p id="character-count-no-spaces">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Average Words Per Line</h3>
-            <p id="average-words-per-line">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Longest Line Length</h3>
-            <p id="longest-line-length">0</p>
-          </div>
-
-          <div class="stat-card">
-            <h3>Section Count</h3>
-            <p id="section-count">0</p>
-          </div>
-        </div>
-
-        <section class="detail-box" aria-labelledby="detected-sections-heading">
-          <h3 id="detected-sections-heading">Detected Sections</h3>
-          <p id="sections-empty">No sections detected yet.</p>
-          <ul id="sections-list"></ul>
-        </section>
-
-        <section class="detail-box" aria-labelledby="longest-line-heading">
-          <h3 id="longest-line-heading">Longest Line</h3>
-          <p id="longest-line-text">Nothing analyzed yet.</p>
-        </section>
-      </aside>
+      <p id="login-error" class="login-error" hidden>Incorrect password. Please try again.</p>
     </section>
   </main>
 
-  <script src="/script.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const hasError = params.get("error");
+
+    if (hasError) {
+      const errorEl = document.getElementById("login-error");
+      errorEl.hidden = false;
+    }
+  </script>
 </body>
 </html>
