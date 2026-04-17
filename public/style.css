@@ -192,10 +192,12 @@ button:active,
   border-radius: 12px;
   padding: 14px;
   cursor: grab;
+  cursor: -webkit-grab;
 }
 
 .section-card:active {
   cursor: grabbing;
+  cursor: -webkit-grabbing;
 }
 
 .section-card-main {
@@ -220,6 +222,13 @@ button:active,
   background: #eef2f5;
   border-radius: 10px;
   user-select: none;
+  cursor: grab;
+  cursor: -webkit-grab;
+}
+
+.section-card.dragging .drag-handle {
+  cursor: grabbing;
+  cursor: -webkit-grabbing;
 }
 
 .section-card-content {
