@@ -1,25 +1,13 @@
-// Wait until the full HTML document is ready before running our code
 document.addEventListener("DOMContentLoaded", () => {
-  // Get the main form so we can listen for submission
   const lyricsForm = document.getElementById("lyrics-form");
-
-  // Get the textarea where the user writes lyrics
   const lyricsInput = document.getElementById("lyrics-input");
-
-  // Get the Clear button
   const clearButton = document.getElementById("clear-btn");
-
-  // Get the status message area
   const statusMessage = document.getElementById("status-message");
-
-  // Get the label helper buttons
   const labelButtons = document.querySelectorAll(".label-btn");
 
-  // Get the parsed sections panel elements
   const parsedSectionsList = document.getElementById("parsed-sections-list");
   const sectionsPanelMessage = document.getElementById("sections-panel-message");
 
-  // Get each stat output field
   const lineCount = document.getElementById("line-count");
   const nonEmptyLineCount = document.getElementById("non-empty-line-count");
   const wordCount = document.getElementById("word-count");
@@ -29,133 +17,97 @@ document.addEventListener("DOMContentLoaded", () => {
   const longestLineLength = document.getElementById("longest-line-length");
   const sectionCount = document.getElementById("section-count");
 
-  // Get the extra detail output areas
   const sectionsEmpty = document.getElementById("sections-empty");
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
-  // Keep track of which parsed section card is being dragged
   let draggedCard = null;
 
-  // Helper function to insert text into the textarea at the current cursor position
   function insertAtCursor(textToInsert) {
-    // Get the current cursor start and end positions
     const start = lyricsInput.selectionStart;
     const end = lyricsInput.selectionEnd;
 
-    // Get the text before and after the current selection
     const before = lyricsInput.value.slice(0, start);
     const after = lyricsInput.value.slice(end);
 
-    // Decide whether to add line breaks before the label
     const prefix = before && !before.endsWith("\n") ? "\n\n" : "";
-
-    // Add line breaks after the label so the user can start typing below it
     const insertion = `${prefix}${textToInsert}\n`;
 
-    // Build the new textarea value
     lyricsInput.value = before + insertion + after;
 
-    // Place the cursor at the end of the inserted text
     const newPosition = (before + insertion).length;
     lyricsInput.focus();
     lyricsInput.setSelectionRange(newPosition, newPosition);
   }
 
-  // Helper function to create one parsed section card
   function createSectionCard(section) {
-    // Create the outer card element
     const card = document.createElement("article");
-
-    // Add a CSS class for styling
     card.className = "section-card";
-
-    // Mark the card as draggable
     card.draggable = true;
-
-    // Store the section id on the card for future use
     card.dataset.sectionId = section.id;
 
-    // Create the card header
     const cardHeader = document.createElement("div");
     cardHeader.className = "section-card-header";
 
-    // Create the section title element
     const title = document.createElement("h3");
     title.textContent = section.label;
 
-    // Create a small drag handle hint
     const handle = document.createElement("span");
     handle.className = "drag-handle";
     handle.textContent = "Drag";
 
-    // Add the title and handle into the card header
     cardHeader.appendChild(title);
     cardHeader.appendChild(handle);
 
-    // Create the section body text area
     const body = document.createElement("pre");
     body.className = "section-card-content";
     body.textContent = section.content || "(No lines in this section)";
 
-    // Put the header and content into the card
     card.appendChild(cardHeader);
     card.appendChild(body);
 
-    // When dragging starts, remember this card and add a visual state
     card.addEventListener("dragstart", () => {
       draggedCard = card;
       card.classList.add("dragging");
     });
 
-    // When dragging ends, remove the visual drag state
     card.addEventListener("dragend", () => {
       card.classList.remove("dragging");
       draggedCard = null;
     });
 
-    // Allow dropping onto another card
     card.addEventListener("dragover", (event) => {
-      // Prevent default so dropping is allowed
       event.preventDefault();
 
-      // Ignore if there is no dragged card or if the target is the same card
       if (!draggedCard || draggedCard === card) {
         return;
       }
 
-      // Move the dragged card before the current card
       parsedSectionsList.insertBefore(draggedCard, card);
     });
 
-    // Return the finished card element
     return card;
   }
 
-  // Helper function to render parsed sections in the panel
   function renderParsedSections(parsedSections) {
-    // Clear any existing cards from the panel
     parsedSectionsList.innerHTML = "";
 
-    // If there are no parsed sections, show the helper message
     if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
-      sectionsPanelMessage.textContent = "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
+      sectionsPanelMessage.textContent =
+        "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
       return;
     }
 
-    // Update the helper message for success
-    sectionsPanelMessage.textContent = "Drag section cards to experiment with order.";
+    sectionsPanelMessage.textContent =
+      "Drag section cards to experiment with order.";
 
-    // Create and add one card for each parsed section
     parsedSections.forEach((section) => {
       const card = createSectionCard(section);
       parsedSectionsList.appendChild(card);
     });
   }
 
-  // Helper function to reset all outputs back to defaults
   function resetResults() {
-    // Reset the number fields
     lineCount.textContent = "0";
     nonEmptyLineCount.textContent = "0";
     wordCount.textContent = "0";
@@ -165,27 +117,21 @@ document.addEventListener("DOMContentLoaded", () => {
     longestLineLength.textContent = "0";
     sectionCount.textContent = "0";
 
-    // Remove previous detected section items
     sectionsList.innerHTML = "";
 
-    // Show the default empty state for detected sections
     sectionsEmpty.style.display = "block";
     sectionsEmpty.textContent = "No sections detected yet.";
 
-    // Reset the longest line output
     longestLineText.textContent = "Nothing analyzed yet.";
 
-    // Reset the parsed sections panel
     parsedSectionsList.innerHTML = "";
-    sectionsPanelMessage.textContent = "Analyze your lyrics to turn detected sections into draggable cards.";
+    sectionsPanelMessage.textContent =
+      "Analyze your lyrics to turn detected sections into draggable cards.";
 
-    // Reset the status message
     statusMessage.textContent = "Enter some lyrics and click Analyze.";
   }
 
-  // Helper function to display all returned analysis data
   function displayResults(data) {
-    // Fill in the stat cards with returned values
     lineCount.textContent = data.lineCount;
     nonEmptyLineCount.textContent = data.nonEmptyLineCount;
     wordCount.textContent = data.wordCount;
@@ -195,17 +141,14 @@ document.addEventListener("DOMContentLoaded", () => {
     longestLineLength.textContent = data.longestLineLength;
     sectionCount.textContent = data.sectionCount;
 
-    // Show the longest line or fallback text
     if (data.longestLine && data.longestLine.trim() !== "") {
       longestLineText.textContent = data.longestLine;
     } else {
       longestLineText.textContent = "No longest line found yet.";
     }
 
-    // Clear old section list items
     sectionsList.innerHTML = "";
 
-    // Show detected section labels if any were found
     if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
       sectionsEmpty.style.display = "none";
 
@@ -219,44 +162,31 @@ document.addEventListener("DOMContentLoaded", () => {
       sectionsEmpty.textContent = "No section labels were detected.";
     }
 
-    // Render the parsed sections panel
     renderParsedSections(data.parsedSections);
-
-    // Update the status message
     statusMessage.textContent = "Analysis complete.";
   }
 
-  // Add click behavior to every label button
   labelButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      // Read the label text from the button's data attribute
       const label = button.dataset.label;
-
-      // Insert the label into the textarea
       insertAtCursor(label);
     });
   });
 
-  // Listen for form submission
   lyricsForm.addEventListener("submit", async (event) => {
-    // Prevent the normal browser page reload
     event.preventDefault();
 
-    // Read the current lyrics from the textarea
     const lyrics = lyricsInput.value;
 
-    // Stop early if the textarea is empty
     if (!lyrics.trim()) {
       resetResults();
       statusMessage.textContent = "Please enter some lyrics before analyzing.";
       return;
     }
 
-    // Show a working message
     statusMessage.textContent = "Analyzing lyrics...";
 
     try {
-      // Send the lyrics to the backend
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
@@ -265,40 +195,24 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ lyrics })
       });
 
-      // Throw an error if the server did not return success
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
       }
 
-      // Turn the server response into JavaScript data
       const data = await response.json();
-
-      // Put the result on the page
       displayResults(data);
     } catch (error) {
-      // Show an error to the user
       statusMessage.textContent = "Something went wrong while analyzing your lyrics.";
-
-      // Log the technical error for debugging
       console.error("Analysis error:", error);
-
-      // Reset the visible outputs
       resetResults();
     }
   });
 
-  // Listen for clicks on the Clear button
   clearButton.addEventListener("click", () => {
-    // Clear the textarea
     lyricsInput.value = "";
-
-    // Reset all output areas
     resetResults();
-
-    // Put focus back into the textarea
     lyricsInput.focus();
   });
 
-  // Set the page to its default state on first load
   resetResults();
 });
