@@ -95,15 +95,20 @@ document.addEventListener("DOMContentLoaded", () => {
     card.appendChild(handle);
     card.appendChild(contentWrap);
 
-    card.addEventListener("dragstart", () => {
+    card.addEventListener("dragstart", (event) => {
       draggedCard = card;
       card.classList.add("dragging");
+
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+      }
     });
 
     card.addEventListener("dragend", () => {
       card.classList.remove("dragging");
       draggedCard = null;
       syncTextareaFromCards();
+
       sectionsPanelMessage.textContent =
         "Section order updated. The textarea now matches the card order.";
     });
