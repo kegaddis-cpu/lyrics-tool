@@ -3,41 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login | Lyrics Helper</title>
+  <title>Lyrics Helper</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main class="login-page">
-    <section class="login-card">
-      <h1>Lyrics Helper</h1>
-      <p class="login-subtitle">Enter the app password to continue.</p>
+  <main class="app">
+    <header class="app-header">
+      <div>
+        <h1>Lyrics Helper</h1>
+        <p class="app-subtitle">
+          Paste lyrics, add section labels, analyze structure, and reorder sections visually.
+        </p>
+      </div>
 
-      <form action="/login" method="POST" class="login-form">
-        <label for="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autocomplete="current-password"
-          placeholder="Enter password"
-        />
-
-        <button type="submit">Log In</button>
+      <form action="/logout" method="POST" class="logout-form">
+        <button type="submit" class="secondary-btn">Logout</button>
       </form>
+    </header>
 
-      <p id="login-error" class="login-error" hidden>Incorrect password. Please try again.</p>
+    <section class="tool-panel">
+      <div class="input-column">
+        <form id="lyrics-form">
+          <label for="lyrics-input">Lyrics</label>
+
+          <div class="label-toolbar" aria-label="Section label shortcuts">
+            <button type="button" class="label-btn" data-label="Verse">Verse</button>
+            <button type="button" class="label-btn" data-label="Chorus">Chorus</button>
+            <button type="button" class="label-btn" data-label="Pre-Chorus">Pre-Chorus</button>
+            <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
+            <button type="button" class="label-btn" data-label="Outro">Outro</button>
+          </div>
+
+          <textarea
+            id="lyrics-input"
+            name="lyrics"
+            placeholder="Type or paste your lyrics here..."
+            spellcheck="true"
+          ></textarea>
+
+          <div class="button-row">
+            <button type="submit">Analyze</button>
+            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
+          </div>
+        </form>
+
+        <section class="sections-panel" aria-labelledby="sections-heading">
+          <h2 id="sections-heading">Parsed Sections</h2>
+          <p id="sections-panel-message">
+            Analyze your lyrics to turn detected sections into draggable cards.
+          </p>
+          <div id="parsed-sections-list" class="parsed-sections-list"></div>
+        </section>
+      </div>
+
+      <aside class="results-panel" aria-labelledby="results-heading">
+        <h2 id="results-heading">Analysis</h2>
+        <p id="status-message">Enter some lyrics and click Analyze.</p>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Lines</h3>
+            <p id="line-count">0</p>
+          </div>
+
+          <div class="stat-card">
+            <h3>Word Count</h3>
+            <p id="word-count">0</p>
+          </div>
+
+          <div class="stat-card">
+            <h3>Average Words Per Line</h3>
+            <p id="average-words-per-line">0</p>
+          </div>
+
+          <div class="stat-card">
+            <h3>Section Count</h3>
+            <p id="section-count">0</p>
+          </div>
+        </div>
+
+        <section class="detail-box" aria-labelledby="detected-sections-heading">
+          <h3 id="detected-sections-heading">Detected Sections</h3>
+          <p id="sections-empty">No sections detected yet.</p>
+          <ul id="sections-list"></ul>
+        </section>
+
+        <section class="detail-box" aria-labelledby="longest-line-heading">
+          <h3 id="longest-line-heading">Longest Line</h3>
+          <p id="longest-line-text">Nothing analyzed yet.</p>
+        </section>
+      </aside>
     </section>
   </main>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const hasError = params.get("error");
-
-    if (hasError) {
-      const errorEl = document.getElementById("login-error");
-      errorEl.hidden = false;
-    }
-  </script>
+  <script src="/script.js"></script>
 </body>
 </html>
