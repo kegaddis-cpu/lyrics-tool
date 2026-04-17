@@ -85,6 +85,10 @@ app.post("/api/analyze", (req, res) => {
   });
 });
 
+app.get("/logout", (req, res) => {
+  res.redirect("/");
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
