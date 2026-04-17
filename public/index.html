@@ -1,183 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Tell the browser which character set this page uses -->
-  <meta charset="UTF-8">
-
-  <!-- Make the page size correctly on phones and tablets -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- This is the text shown in the browser tab -->
-  <title>Lyrics Tool</title>
-
-  <!-- Load our external CSS file for styling -->
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyrics Helper</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <!-- Main page wrapper -->
   <main class="app">
-    <!-- Top bar for the app title area and logout link -->
     <header class="app-header">
-      <!-- Left side of the header -->
       <div>
-        <!-- Main page heading -->
-        <h1>Lyrics Tool</h1>
-
-        <!-- Short explanation of what this tool does -->
+        <h1>Lyrics Helper</h1>
         <p class="app-subtitle">
-          Paste or write your lyrics below, then analyze them for line count,
-          word count, detected sections, and draggable section blocks.
+          Paste lyrics, organize sections, and analyze structure in one place.
         </p>
       </div>
 
-      <!-- Logout link that sends the user to the logout route -->
-      <a href="/logout" class="button-link secondary-btn">Log Out</a>
+      <a href="/logout" class="button-link secondary-btn">Logout</a>
     </header>
 
-    <!-- Main two-column tool layout -->
     <section class="tool-panel">
-      <!-- Left side: input area -->
-      <section class="input-column">
-        <!-- Form area for entering lyrics -->
+      <div class="input-column">
         <form id="lyrics-form">
-          <!-- Label connected to the textarea for accessibility -->
-          <label for="lyrics-input">Your lyrics</label>
+          <label for="lyrics-input">Lyrics</label>
 
-          <!-- Toolbar of quick section label buttons -->
-          <div class="label-toolbar" aria-label="Insert section labels">
-            <!-- Each button inserts a section label into the textarea -->
+          <div class="label-toolbar" aria-label="Section label shortcuts">
             <button type="button" class="label-btn" data-label="Verse">Verse</button>
             <button type="button" class="label-btn" data-label="Chorus">Chorus</button>
-            <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
-            <button type="button" class="label-btn" data-label="Hook">Hook</button>
-            <button type="button" class="label-btn" data-label="Intro">Intro</button>
-            <button type="button" class="label-btn" data-label="Outro">Outro</button>
             <button type="button" class="label-btn" data-label="Pre-Chorus">Pre-Chorus</button>
+            <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
+            <button type="button" class="label-btn" data-label="Outro">Outro</button>
           </div>
 
-          <!-- Multi-line text box where the user types lyrics -->
           <textarea
             id="lyrics-input"
             name="lyrics"
-            rows="16"
-            placeholder="Example:
-Verse 1
-I was walking through the midnight rain
-Trying to find my way back home
-
-Chorus
-You were the fire in the dark
-The echo in my heart"
-            required
+            placeholder="Type or paste your lyrics here..."
+            spellcheck="true"
           ></textarea>
 
-          <!-- Row of main action buttons -->
           <div class="button-row">
-            <!-- Button to send the lyrics to the server for analysis -->
-            <button type="submit" id="analyze-btn">Analyze</button>
-
-            <!-- Button to clear the textarea and results -->
+            <button type="submit">Analyze</button>
             <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
           </div>
         </form>
 
-        <!-- Parsed sections panel -->
-        <section class="sections-panel">
-          <!-- Heading for the parsed sections area -->
-          <h2>Sections</h2>
-
-          <!-- Helper text for the user -->
+        <section class="sections-panel" aria-labelledby="sections-heading">
+          <h2 id="sections-heading">Parsed Sections</h2>
           <p id="sections-panel-message">
             Analyze your lyrics to turn detected sections into draggable cards.
           </p>
-
-          <!-- Container where JavaScript will insert draggable section cards -->
           <div id="parsed-sections-list" class="parsed-sections-list"></div>
         </section>
-      </section>
+      </div>
 
-      <!-- Right side: results area -->
-      <section class="results-panel" aria-live="polite">
-        <!-- Section heading for the analysis results -->
-        <h2>Analysis Results</h2>
-
-        <!-- Small message shown before any analysis has been run -->
+      <aside class="results-panel" aria-labelledby="results-heading">
+        <h2 id="results-heading">Analysis</h2>
         <p id="status-message">Enter some lyrics and click Analyze.</p>
 
-        <!-- Grid of summary cards -->
         <div class="stats-grid">
-          <!-- Total number of lines, including empty lines -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Total Lines</h3>
             <p id="line-count">0</p>
-          </article>
+          </div>
 
-          <!-- Number of lines that actually contain text -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Non-Empty Lines</h3>
             <p id="non-empty-line-count">0</p>
-          </article>
+          </div>
 
-          <!-- Number of words found in the lyrics -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Word Count</h3>
             <p id="word-count">0</p>
-          </article>
+          </div>
 
-          <!-- Number of characters including spaces -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Characters</h3>
             <p id="character-count">0</p>
-          </article>
+          </div>
 
-          <!-- Number of characters excluding spaces -->
-          <article class="stat-card">
-            <h3>Characters (No Spaces)</h3>
+          <div class="stat-card">
+            <h3>Characters No Spaces</h3>
             <p id="character-count-no-spaces">0</p>
-          </article>
+          </div>
 
-          <!-- Average words per non-empty line -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Average Words Per Line</h3>
             <p id="average-words-per-line">0</p>
-          </article>
+          </div>
 
-          <!-- Length of the longest line -->
-          <article class="stat-card">
+          <div class="stat-card">
             <h3>Longest Line Length</h3>
             <p id="longest-line-length">0</p>
-          </article>
+          </div>
 
-          <!-- Number of section labels detected -->
-          <article class="stat-card">
-            <h3>Sections Found</h3>
+          <div class="stat-card">
+            <h3>Section Count</h3>
             <p id="section-count">0</p>
-          </article>
+          </div>
         </div>
 
-        <!-- Area to show the actual section names found -->
-        <section class="detail-box">
-          <h3>Detected Sections</h3>
-
-          <!-- Empty state shown if no sections are found -->
+        <section class="detail-box" aria-labelledby="detected-sections-heading">
+          <h3 id="detected-sections-heading">Detected Sections</h3>
           <p id="sections-empty">No sections detected yet.</p>
-
-          <!-- List of detected sections will be inserted here with JavaScript -->
           <ul id="sections-list"></ul>
         </section>
 
-        <!-- Area to show the longest line -->
-        <section class="detail-box">
-          <h3>Longest Line</h3>
-
-          <!-- JavaScript will replace this text after analysis -->
+        <section class="detail-box" aria-labelledby="longest-line-heading">
+          <h3 id="longest-line-heading">Longest Line</h3>
           <p id="longest-line-text">Nothing analyzed yet.</p>
         </section>
-      </section>
+      </aside>
     </section>
   </main>
 
-  <!-- Load our JavaScript file after the page content is loaded -->
   <script src="/script.js"></script>
 </body>
 </html>
