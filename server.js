@@ -8,6 +8,8 @@ const PORT = process.env.PORT || 3000;
 const APP_PASSWORD = process.env.APP_PASSWORD || "changeme123";
 const SESSION_SECRET = process.env.SESSION_SECRET || "replace-this-session-secret";
 
+app.set("trust proxy", 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -17,6 +19,7 @@ app.use(
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    proxy: true,
     cookie: {
       httpOnly: true,
       sameSite: "lax",
@@ -30,7 +33,6 @@ function requireAuth(req, res, next) {
   if (req.session && req.session.authenticated) {
     return next();
   }
-
   return res.redirect("/login");
 }
 
@@ -38,7 +40,6 @@ function requireApiAuth(req, res, next) {
   if (req.session && req.session.authenticated) {
     return next();
   }
-
   return res.status(401).json({ error: "Authentication required" });
 }
 
@@ -143,17 +144,12 @@ app.post("/api/analyze", requireApiAuth, (req, res) => {
     });
   }
 
-  const longestLine = lines.reduce((longest, line) => {
-    return line.length > longest.length ? line : longest;
-  }, "");
-
   res.json({
     lineCount: lines.length,
     wordCount: words.length,
     averageWordsPerLine:
       nonEmptyLines.length > 0 ? (words.length / nonEmptyLines.length).toFixed(2) : "0",
     sectionCount: parsedSections.length,
-    longestLine,
     detectedSections,
     parsedSections
   });
