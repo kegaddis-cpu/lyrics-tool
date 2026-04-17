@@ -1,14 +1,9 @@
-function initializeLyricsTool() {
-  if (window.__lyricsToolInitialized) {
-    return;
-  }
-  window.__lyricsToolInitialized = true;
-
+document.addEventListener("DOMContentLoaded", () => {
   const lyricsForm = document.getElementById("lyrics-form");
   const lyricsInput = document.getElementById("lyrics-input");
   const clearButton = document.getElementById("clear-btn");
   const statusMessage = document.getElementById("status-message");
-  const labelToolbar = document.querySelector(".label-toolbar");
+  const labelButtons = document.querySelectorAll(".label-btn");
 
   const parsedSectionsList = document.getElementById("parsed-sections-list");
   const sectionsPanelMessage = document.getElementById("sections-panel-message");
@@ -26,21 +21,16 @@ function initializeLyricsTool() {
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
-  if (!lyricsForm || !lyricsInput || !statusMessage) {
-    return;
-  }
-
   let draggedCard = null;
 
   function insertAtCursor(textToInsert) {
-    const start = lyricsInput.selectionStart ?? 0;
-    const end = lyricsInput.selectionEnd ?? 0;
+    const start = lyricsInput.selectionStart;
+    const end = lyricsInput.selectionEnd;
 
     const before = lyricsInput.value.slice(0, start);
     const after = lyricsInput.value.slice(end);
 
-    const needsLeadingBreaks = before.length > 0 && !before.endsWith("\n");
-    const prefix = needsLeadingBreaks ? "\n\n" : "";
+    const prefix = before && !before.endsWith("\n") ? "\n\n" : "";
     const insertion = `${prefix}${textToInsert}\n`;
 
     lyricsInput.value = before + insertion + after;
@@ -50,47 +40,17 @@ function initializeLyricsTool() {
     lyricsInput.setSelectionRange(newPosition, newPosition);
   }
 
-  function syncTextareaFromCards() {
-    if (!parsedSectionsList) {
-      return;
-    }
-
-    const cards = Array.from(parsedSectionsList.querySelectorAll(".section-card"));
-
-    if (cards.length === 0) {
-      return;
-    }
-
-    const rebuiltText = cards
-      .map((card) => {
-        const label = card.dataset.label || "";
-        const content = card.dataset.content || "";
-
-        if (label === "Unlabeled") {
-          return content.trim();
-        }
-
-        return `${label}\n${content.trim()}`.trim();
-      })
-      .filter((block) => block !== "")
-      .join("\n\n");
-
-    lyricsInput.value = rebuiltText;
-  }
-
   function createSectionCard(section) {
     const card = document.createElement("article");
     card.className = "section-card";
     card.draggable = true;
-    card.dataset.sectionId = section.id || "";
-    card.dataset.label = section.label || "Unlabeled";
-    card.dataset.content = section.content || "";
+    card.dataset.sectionId = section.id;
 
     const cardHeader = document.createElement("div");
     cardHeader.className = "section-card-header";
 
     const title = document.createElement("h3");
-    title.textContent = section.label || "Unlabeled";
+    title.textContent = section.label;
 
     const handle = document.createElement("span");
     handle.className = "drag-handle";
@@ -114,18 +74,12 @@ function initializeLyricsTool() {
     card.addEventListener("dragend", () => {
       card.classList.remove("dragging");
       draggedCard = null;
-      syncTextareaFromCards();
-
-      if (sectionsPanelMessage) {
-        sectionsPanelMessage.textContent =
-          "Section order updated. The textarea now matches the card order.";
-      }
     });
 
     card.addEventListener("dragover", (event) => {
       event.preventDefault();
 
-      if (!draggedCard || draggedCard === card || !parsedSectionsList) {
+      if (!draggedCard || draggedCard === card) {
         return;
       }
 
@@ -136,10 +90,6 @@ function initializeLyricsTool() {
   }
 
   function renderParsedSections(parsedSections) {
-    if (!parsedSectionsList || !sectionsPanelMessage) {
-      return;
-    }
-
     parsedSectionsList.innerHTML = "";
 
     if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
@@ -149,88 +99,65 @@ function initializeLyricsTool() {
     }
 
     sectionsPanelMessage.textContent =
-      "Drag section cards to reorder them. The textarea will update automatically.";
+      "Drag section cards to experiment with order.";
 
     parsedSections.forEach((section) => {
-      parsedSectionsList.appendChild(createSectionCard(section));
+      const card = createSectionCard(section);
+      parsedSectionsList.appendChild(card);
     });
   }
 
   function resetResults() {
-    if (lineCount) lineCount.textContent = "0";
-    if (nonEmptyLineCount) nonEmptyLineCount.textContent = "0";
-    if (wordCount) wordCount.textContent = "0";
-    if (characterCount) characterCount.textContent = "0";
-    if (characterCountNoSpaces) characterCountNoSpaces.textContent = "0";
-    if (averageWordsPerLine) averageWordsPerLine.textContent = "0";
-    if (longestLineLength) longestLineLength.textContent = "0";
-    if (sectionCount) sectionCount.textContent = "0";
+    lineCount.textContent = "0";
+    nonEmptyLineCount.textContent = "0";
+    wordCount.textContent = "0";
+    characterCount.textContent = "0";
+    characterCountNoSpaces.textContent = "0";
+    averageWordsPerLine.textContent = "0";
+    longestLineLength.textContent = "0";
+    sectionCount.textContent = "0";
 
-    if (sectionsList) {
-      sectionsList.innerHTML = "";
-    }
+    sectionsList.innerHTML = "";
 
-    if (sectionsEmpty) {
-      sectionsEmpty.style.display = "block";
-      sectionsEmpty.textContent = "No sections detected yet.";
-    }
+    sectionsEmpty.style.display = "block";
+    sectionsEmpty.textContent = "No sections detected yet.";
 
-    if (longestLineText) {
-      longestLineText.textContent = "Nothing analyzed yet.";
-    }
+    longestLineText.textContent = "Nothing analyzed yet.";
 
-    if (parsedSectionsList) {
-      parsedSectionsList.innerHTML = "";
-    }
-
-    if (sectionsPanelMessage) {
-      sectionsPanelMessage.textContent =
-        "Analyze your lyrics to turn detected sections into draggable cards.";
-    }
+    parsedSectionsList.innerHTML = "";
+    sectionsPanelMessage.textContent =
+      "Analyze your lyrics to turn detected sections into draggable cards.";
 
     statusMessage.textContent = "Enter some lyrics and click Analyze.";
   }
 
   function displayResults(data) {
-    if (lineCount) lineCount.textContent = data.lineCount ?? "0";
-    if (nonEmptyLineCount) nonEmptyLineCount.textContent = data.nonEmptyLineCount ?? "0";
-    if (wordCount) wordCount.textContent = data.wordCount ?? "0";
-    if (characterCount) characterCount.textContent = data.characterCount ?? "0";
-    if (characterCountNoSpaces) {
-      characterCountNoSpaces.textContent = data.characterCountNoSpaces ?? "0";
-    }
-    if (averageWordsPerLine) {
-      averageWordsPerLine.textContent = data.averageWordsPerLine ?? "0";
-    }
-    if (longestLineLength) {
-      longestLineLength.textContent = data.longestLineLength ?? "0";
-    }
-    if (sectionCount) sectionCount.textContent = data.sectionCount ?? "0";
+    lineCount.textContent = data.lineCount;
+    nonEmptyLineCount.textContent = data.nonEmptyLineCount;
+    wordCount.textContent = data.wordCount;
+    characterCount.textContent = data.characterCount;
+    characterCountNoSpaces.textContent = data.characterCountNoSpaces;
+    averageWordsPerLine.textContent = data.averageWordsPerLine;
+    longestLineLength.textContent = data.longestLineLength;
+    sectionCount.textContent = data.sectionCount;
 
-    if (longestLineText) {
-      longestLineText.textContent =
-        data.longestLine && data.longestLine.trim() !== ""
-          ? data.longestLine
-          : "No longest line found yet.";
+    if (data.longestLine && data.longestLine.trim() !== "") {
+      longestLineText.textContent = data.longestLine;
+    } else {
+      longestLineText.textContent = "No longest line found yet.";
     }
 
-    if (sectionsList) {
-      sectionsList.innerHTML = "";
-    }
+    sectionsList.innerHTML = "";
 
     if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
-      if (sectionsEmpty) {
-        sectionsEmpty.style.display = "none";
-      }
+      sectionsEmpty.style.display = "none";
 
-      if (sectionsList) {
-        data.detectedSections.forEach((section) => {
-          const listItem = document.createElement("li");
-          listItem.textContent = section;
-          sectionsList.appendChild(listItem);
-        });
-      }
-    } else if (sectionsEmpty) {
+      data.detectedSections.forEach((section) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = section;
+        sectionsList.appendChild(listItem);
+      });
+    } else {
       sectionsEmpty.style.display = "block";
       sectionsEmpty.textContent = "No section labels were detected.";
     }
@@ -239,22 +166,12 @@ function initializeLyricsTool() {
     statusMessage.textContent = "Analysis complete.";
   }
 
-  if (labelToolbar) {
-    labelToolbar.addEventListener("click", (event) => {
-      const button = event.target.closest(".label-btn");
-
-      if (!button || !labelToolbar.contains(button)) {
-        return;
-      }
-
-      event.preventDefault();
-
+  labelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
       const label = button.dataset.label;
-      if (label) {
-        insertAtCursor(label);
-      }
+      insertAtCursor(label);
     });
-  }
+  });
 
   lyricsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -285,25 +202,17 @@ function initializeLyricsTool() {
       const data = await response.json();
       displayResults(data);
     } catch (error) {
+      statusMessage.textContent = "Something went wrong while analyzing your lyrics.";
       console.error("Analysis error:", error);
-      statusMessage.textContent =
-        "Something went wrong while analyzing your lyrics. Check the browser console.";
+      resetResults();
     }
   });
 
-  if (clearButton) {
-    clearButton.addEventListener("click", () => {
-      lyricsInput.value = "";
-      resetResults();
-      lyricsInput.focus();
-    });
-  }
+  clearButton.addEventListener("click", () => {
+    lyricsInput.value = "";
+    resetResults();
+    lyricsInput.focus();
+  });
 
   resetResults();
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeLyricsTool);
-} else {
-  initializeLyricsTool();
-}
+});
