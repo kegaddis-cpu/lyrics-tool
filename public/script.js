@@ -9,12 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const sectionsPanelMessage = document.getElementById("sections-panel-message");
 
   const lineCount = document.getElementById("line-count");
-  const nonEmptyLineCount = document.getElementById("non-empty-line-count");
   const wordCount = document.getElementById("word-count");
-  const characterCount = document.getElementById("character-count");
-  const characterCountNoSpaces = document.getElementById("character-count-no-spaces");
   const averageWordsPerLine = document.getElementById("average-words-per-line");
-  const longestLineLength = document.getElementById("longest-line-length");
   const sectionCount = document.getElementById("section-count");
 
   const sectionsEmpty = document.getElementById("sections-empty");
@@ -146,12 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function resetResults() {
     lineCount.textContent = "0";
-    nonEmptyLineCount.textContent = "0";
     wordCount.textContent = "0";
-    characterCount.textContent = "0";
-    characterCountNoSpaces.textContent = "0";
     averageWordsPerLine.textContent = "0";
-    longestLineLength.textContent = "0";
     sectionCount.textContent = "0";
 
     sectionsList.innerHTML = "";
@@ -169,12 +161,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function displayResults(data) {
     lineCount.textContent = data.lineCount ?? "0";
-    nonEmptyLineCount.textContent = data.nonEmptyLineCount ?? "0";
     wordCount.textContent = data.wordCount ?? "0";
-    characterCount.textContent = data.characterCount ?? "0";
-    characterCountNoSpaces.textContent = data.characterCountNoSpaces ?? "0";
     averageWordsPerLine.textContent = data.averageWordsPerLine ?? "0";
-    longestLineLength.textContent = data.longestLineLength ?? "0";
     sectionCount.textContent = data.sectionCount ?? "0";
 
     if (data.longestLine && data.longestLine.trim() !== "") {
@@ -232,6 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         body: JSON.stringify({ lyrics })
       });
+
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
