@@ -17,7 +17,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
+  const STORAGE_KEY = "lyrics-helper-draft";
+
   let draggedCard = null;
+
+  function saveDraft() {
+    localStorage.setItem(STORAGE_KEY, lyricsInput.value);
+  }
+
+  function loadDraft() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      lyricsInput.value = saved;
+    }
+  }
+
+  function clearDraft() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
 
   function insertAtCursor(textToInsert) {
     const start = lyricsInput.selectionStart ?? 0;
@@ -34,6 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const newPosition = (before + insertion).length;
     lyricsInput.focus();
     lyricsInput.setSelectionRange(newPosition, newPosition);
+    saveDraft();
   }
 
   function syncTextareaFromCards() {
@@ -58,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("\n\n");
 
     lyricsInput.value = rebuiltText;
+    saveDraft();
   }
 
   function createSectionCard(section) {
@@ -195,10 +214,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  lyricsInput.addEventListener("input", saveDraft);
+
   lyricsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const lyrics = lyricsInput.value;
+    saveDraft();
 
     if (!lyrics.trim()) {
       resetResults();
@@ -237,9 +259,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   clearButton.addEventListener("click", () => {
     lyricsInput.value = "";
+    clearDraft();
     resetResults();
     lyricsInput.focus();
   });
 
+  loadDraft();
   resetResults();
 });
