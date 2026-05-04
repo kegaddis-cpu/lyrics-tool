@@ -27,6 +27,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const wordToolsStatus = document.getElementById("word-tools-status");
   const wordToolsResults = document.getElementById("word-tools-results");
 
+  const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
+  const mobileHeaderMenu = document.getElementById("mobile-header-menu");
+
   const STORAGE_KEY = "lyrics-helper-draft";
 
   let draggedCard = null;
@@ -47,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function escapeHtml(value) {
-    return value
+    return String(value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -100,23 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return response.json();
   }
 
-  function renderWordList(title, words) {
-    if (!Array.isArray(words) || words.length === 0) {
-      setWordToolsResults(`<p class="word-tools-empty">No results found.</p>`);
-      return;
-    }
-
-    const items = words
-      .map((word) => `<button type="button" class="word-chip insert-word-btn" data-word="${escapeHtml(word)}">${escapeHtml(word)}</button>`)
-      .join("");
-
-    setWordToolsResults(`
-      <div class="word-tools-result-block">
-        <h3>${escapeHtml(title)}</h3>
-        <div class="word-chip-list">${items}</div>
-      </div>
-    `);
-
+  function attachWordChipHandlers() {
     document.querySelectorAll(".insert-word-btn").forEach((button) => {
       button.addEventListener("click", () => {
         const word = button.dataset.word || "";
@@ -126,9 +113,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderWordList(title, words) {
+    if (!Array.isArray(words) || words.length === 0) {
+      setWordToolsResults(`<p class="word-tools-empty">No results found.</p>`);
+      return;
+    }
+
+    const items = words
+      .map(
+        (word) =>
+          `<button type="button" class="word-chip insert-word-btn" data-word="${escapeHtml(word)}">${escapeHtml(word)}</button>`
+      )
+      .join("");
+
+    setWordToolsResults(`
+      <div class="word-tools-result-block">
+        <h3>${escapeHtml(title)}</h3>
+        <div class="word-chip-list">${items}</div>
+      </div>
+    `);
+
+    attachWordChipHandlers();
+  }
+
   function renderSyllableResult(text, syllables) {
     if (syllables === null || syllables === undefined) {
-      setWordToolsResults(`<p class="word-tools-empty">No syllable data found for <strong>${escapeHtml(text)}</strong>.</p>`);
+      setWordToolsResults(
+        `<p class="word-tools-empty">No syllable data found for <strong>${escapeHtml(text)}</strong>.</p>`
+      );
       return;
     }
 
@@ -142,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderRandomResult(result, mode) {
     if (!result) {
-      setWordToolsResults(`<p class="word-tools-empty">No random ${mode} found.</p>`);
+      setWordToolsResults(`<p class="word-tools-empty">No random ${escapeHtml(mode)} found.</p>`);
       return;
     }
 
@@ -155,13 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `);
 
-    document.querySelectorAll(".insert-word-btn").forEach((button) => {
-      button.addEventListener("click", () => {
-        const word = button.dataset.word || "";
-        wordToolsInput.value = word;
-        setWordToolsStatus(`Loaded "${word}" into the word tools input.`);
-      });
-    });
+    attachWordChipHandlers();
   }
 
   async function runRhymesSearch(word, sourceLabel) {
@@ -187,4 +193,319 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function insertAtCursor(text
+  function insertAtCursor(textToInsert) {
+    const start = lyricsInput.selectionStart ?? 0;
+    const end = lyricsInput.selectionEnd ?? 0;
+
+    const before = lyricsInput.value.slice(0, start);
+    const after = lyricsInput.value.slice(end);
+
+    const prefix = before && !before.endsWith("\n") ? "\n\n" : "";
+    const insertion = `${prefix}${textToInsert}\n`;
+
+    lyricsInput.value = before + insertion + after;
+
+    const newPosition = (before + insertion).length;
+    lyricsInput.focus();
+    lyricsInput.setSelectionRange(newPosition, newPosition);
+    saveDraft();
+    updateSelectedWordPreview();
+  }
+
+  function syncTextareaFromCards() {
+    const cards = Array.from(parsedSectionsList.querySelectorAll(".section-card"));
+
+    if (cards.length === 0) {
+      return;
+    }
+
+    const rebuiltText = cards
+      .map((card) => {
+        const label = card.dataset.label || "Unlabeled";
+        const content = card.dataset.content || "";
+
+        if (label === "Unlabeled") {
+          return content.trim();
+        }
+
+        return `${label}\n${content.trim()}`.trim();
+      })
+      .filter((block) => block !== "")
+      .join("\n\n");
+
+    lyricsInput.value = rebuiltText;
+    saveDraft();
+    updateSelectedWordPreview();
+  }
+
+  function createSectionCard(section) {
+    const card = document.createElement("article");
+    card.className = "section-card";
+    card.draggable = true;
+
+    card.dataset.sectionId = section.id || "";
+    card.dataset.label = section.label || "Unlabeled";
+    card.dataset.content = section.content || "";
+
+    const handle = document.createElement("span");
+    handle.className = "drag-handle";
+    handle.setAttribute("aria-hidden", "true");
+    handle.textContent = "☰";
+
+    const contentWrap = document.createElement("div");
+    contentWrap.className = "section-card-main";
+
+    const title = document.createElement("h3");
+    title.className = "section-card-title";
+    title.textContent = section.label || "Unlabeled";
+
+    const body = document.createElement("pre");
+    body.className = "section-card-content";
+    body.textContent = section.content || "(No lines in this section)";
+
+    contentWrap.appendChild(title);
+    contentWrap.appendChild(body);
+
+    card.appendChild(handle);
+    card.appendChild(contentWrap);
+
+    card.addEventListener("dragstart", (event) => {
+      draggedCard = card;
+      card.classList.add("dragging");
+
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+      }
+    });
+
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+      draggedCard = null;
+      syncTextareaFromCards();
+      sectionsPanelMessage.textContent =
+        "Section order updated. The textarea now matches the card order.";
+    });
+
+    card.addEventListener("dragover", (event) => {
+      event.preventDefault();
+
+      if (!draggedCard || draggedCard === card) {
+        return;
+      }
+
+      parsedSectionsList.insertBefore(draggedCard, card);
+    });
+
+    return card;
+  }
+
+  function renderParsedSections(parsedSections) {
+    parsedSectionsList.innerHTML = "";
+
+    if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
+      sectionsPanelMessage.textContent =
+        "No parsed sections yet. Add labels like Verse or Chorus and click Analyze.";
+      return;
+    }
+
+    sectionsPanelMessage.textContent =
+      "Drag section cards using the handle on the left. The textarea now updates to match the card order.";
+
+    parsedSections.forEach((section) => {
+      parsedSectionsList.appendChild(createSectionCard(section));
+    });
+  }
+
+  function resetResults() {
+    lineCount.textContent = "0";
+    wordCount.textContent = "0";
+    averageWordsPerLine.textContent = "0";
+    sectionCount.textContent = "0";
+
+    sectionsList.innerHTML = "";
+    sectionsEmpty.style.display = "block";
+    sectionsEmpty.textContent = "No sections detected yet.";
+
+    longestLineText.textContent = "Nothing analyzed yet.";
+
+    parsedSectionsList.innerHTML = "";
+    sectionsPanelMessage.textContent =
+      "Analyze your lyrics to turn detected sections into draggable cards.";
+
+    statusMessage.textContent = "Enter some lyrics and click Analyze.";
+  }
+
+  function displayResults(data) {
+    lineCount.textContent = data.lineCount ?? "0";
+    wordCount.textContent = data.wordCount ?? "0";
+    averageWordsPerLine.textContent = data.averageWordsPerLine ?? "0";
+    sectionCount.textContent = data.sectionCount ?? "0";
+
+    longestLineText.textContent =
+      data.longestLine && data.longestLine.trim() !== ""
+        ? data.longestLine
+        : "No longest line found yet.";
+
+    sectionsList.innerHTML = "";
+
+    if (Array.isArray(data.detectedSections) && data.detectedSections.length > 0) {
+      sectionsEmpty.style.display = "none";
+      data.detectedSections.forEach((section) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = section;
+        sectionsList.appendChild(listItem);
+      });
+    } else {
+      sectionsEmpty.style.display = "block";
+      sectionsEmpty.textContent = "No section labels were detected.";
+    }
+
+    renderParsedSections(data.parsedSections);
+    statusMessage.textContent = "Analysis complete.";
+  }
+
+  labelButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const label = button.dataset.label;
+      if (label) {
+        insertAtCursor(label);
+      }
+    });
+  });
+
+  lyricsInput.addEventListener("input", () => {
+    saveDraft();
+    updateSelectedWordPreview();
+  });
+
+  lyricsInput.addEventListener("mouseup", updateSelectedWordPreview);
+  lyricsInput.addEventListener("keyup", updateSelectedWordPreview);
+  lyricsInput.addEventListener("select", updateSelectedWordPreview);
+
+  getSelectedRhymesBtn.addEventListener("click", async () => {
+    const selectedWord = getSelectedWordFromLyrics();
+    await runRhymesSearch(selectedWord, "your lyrics selection");
+  });
+
+  getRhymesBtn.addEventListener("click", async () => {
+    const word = wordToolsInput.value.trim();
+    await runRhymesSearch(word, "the word tools input");
+  });
+
+  getSyllablesBtn.addEventListener("click", async () => {
+    const text = wordToolsInput.value.trim();
+
+    if (!text) {
+      setWordToolsStatus("Type a word or phrase first.");
+      setWordToolsResults("");
+      return;
+    }
+
+    setWordToolsStatus(`Counting syllables for "${text}"...`);
+
+    try {
+      const data = await fetchWordToolsJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
+      if (!data) return;
+
+      setWordToolsStatus(`Syllable result for "${data.text}"`);
+      renderSyllableResult(data.text, data.syllables);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch syllable data right now.");
+      setWordToolsResults("");
+    }
+  });
+
+  getRandomBtn.addEventListener("click", async () => {
+    const topic = wordToolsInput.value.trim();
+    const mode = randomModeSelect.value;
+
+    setWordToolsStatus(
+      topic
+        ? `Finding a random ${mode} related to "${topic}"...`
+        : `Finding a random ${mode}...`
+    );
+
+    try {
+      const data = await fetchWordToolsJson(
+        `/api/word-tools/random?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`
+      );
+      if (!data) return;
+
+      setWordToolsStatus(`Random ${data.mode} ready.`);
+      renderRandomResult(data.result, data.mode);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch a random result right now.");
+      setWordToolsResults("");
+    }
+  });
+
+  lyricsForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const lyrics = lyricsInput.value;
+    saveDraft();
+
+    if (!lyrics.trim()) {
+      resetResults();
+      statusMessage.textContent = "Please enter some lyrics before analyzing.";
+      return;
+    }
+
+    statusMessage.textContent = "Analyzing lyrics...";
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ lyrics })
+      });
+
+      if (response.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      displayResults(data);
+    } catch (error) {
+      console.error("Analysis error:", error);
+      statusMessage.textContent =
+        "Something went wrong while analyzing your lyrics.";
+    }
+  });
+
+  clearButton.addEventListener("click", () => {
+    lyricsInput.value = "";
+    clearDraft();
+    resetResults();
+    updateSelectedWordPreview();
+    lyricsInput.focus();
+  });
+
+  if (mobileMenuToggle && mobileHeaderMenu) {
+    mobileMenuToggle.addEventListener("click", () => {
+      const isExpanded = mobileMenuToggle.getAttribute("aria-expanded") === "true";
+      mobileMenuToggle.setAttribute("aria-expanded", String(!isExpanded));
+      mobileHeaderMenu.classList.toggle("hidden", isExpanded);
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 900) {
+        mobileMenuToggle.setAttribute("aria-expanded", "false");
+        mobileHeaderMenu.classList.add("hidden");
+      }
+    });
+  }
+
+  loadDraft();
+  resetResults();
+  updateSelectedWordPreview();
+});
