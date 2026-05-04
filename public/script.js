@@ -34,6 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let draggedCard = null;
 
+  function autoResizeTextarea() {
+    if (!lyricsInput) return;
+    lyricsInput.style.height = "auto";
+    lyricsInput.style.height = `${lyricsInput.scrollHeight}px`;
+  }
+
   function saveDraft() {
     localStorage.setItem(STORAGE_KEY, lyricsInput.value);
   }
@@ -43,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (saved !== null) {
       lyricsInput.value = saved;
     }
+    autoResizeTextarea();
   }
 
   function clearDraft() {
@@ -274,6 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lyricsInput.focus();
     lyricsInput.setSelectionRange(newPosition, newPosition);
     saveDraft();
+    autoResizeTextarea();
     updateSelectedWordPreview();
   }
 
@@ -300,6 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     lyricsInput.value = rebuiltText;
     saveDraft();
+    autoResizeTextarea();
     updateSelectedWordPreview();
   }
 
@@ -440,6 +449,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   lyricsInput.addEventListener("input", () => {
     saveDraft();
+    autoResizeTextarea();
     updateSelectedWordPreview();
   });
 
@@ -457,6 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const lyrics = lyricsInput.value;
     saveDraft();
+    autoResizeTextarea();
 
     if (!lyrics.trim()) {
       resetResults();
@@ -495,6 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   clearButton.addEventListener("click", () => {
     lyricsInput.value = "";
+    lyricsInput.style.height = "auto";
     wordToolsInput.value = "";
     clearDraft();
     resetResults();
@@ -521,4 +533,5 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDraft();
   resetResults();
   updateSelectedWordPreview();
+  autoResizeTextarea();
 });
