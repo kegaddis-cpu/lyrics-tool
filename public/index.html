@@ -12,7 +12,7 @@
       <div>
         <h1>Lyrics Helper</h1>
         <p class="app-subtitle">
-          Paste lyrics, add section labels, analyze structure, and reorder sections visually.
+          Paste lyrics, add section labels, analyze structure, reorder sections, and use word tools for rhymes, syllables, and random inspiration.
         </p>
       </div>
 
@@ -33,6 +33,32 @@
             <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
             <button type="button" class="label-btn" data-label="Outro">Outro</button>
           </div>
+
+          <section class="word-tools-box">
+            <h2>Word Tools</h2>
+            <p class="word-tools-help">Find rhymes, count syllables, or generate a random word or phrase.</p>
+
+            <div class="word-tools-controls">
+              <input
+                type="text"
+                id="word-tools-input"
+                placeholder="Type a word or phrase"
+                autocomplete="off"
+              />
+
+              <select id="random-mode-select">
+                <option value="phrase">Random phrase</option>
+                <option value="word">Random word</option>
+              </select>
+
+              <button type="button" id="get-rhymes-btn">Rhymes</button>
+              <button type="button" id="get-syllables-btn">Syllables</button>
+              <button type="button" id="get-random-btn">Random</button>
+            </div>
+
+            <div id="word-tools-status" class="word-tools-status">Enter a word or phrase to begin.</div>
+            <div id="word-tools-results" class="word-tools-results"></div>
+          </section>
 
           <textarea
             id="lyrics-input"
