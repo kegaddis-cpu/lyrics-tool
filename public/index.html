@@ -9,16 +9,39 @@
 <body>
   <main class="app">
     <header class="app-header">
-      <div>
-        <h1>Lyrics Helper</h1>
-        <p class="app-subtitle">
-          Paste lyrics, add section labels, analyze structure, reorder sections, and use word tools for rhymes, syllables, and random inspiration.
-        </p>
+      <div class="app-header-top">
+        <div>
+          <h1>Lyrics Helper</h1>
+          <p class="app-subtitle">
+            Paste lyrics, add section labels, analyze structure, reorder sections, and highlight a word in your lyrics to see rhymes.
+          </p>
+        </div>
+
+        <div class="desktop-header-actions">
+          <form action="/logout" method="POST" class="logout-form">
+            <button type="submit" class="secondary-btn">Logout</button>
+          </form>
+        </div>
+
+        <button
+          type="button"
+          id="mobile-menu-toggle"
+          class="mobile-menu-toggle"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="mobile-header-menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
       </div>
 
-      <form action="/logout" method="POST" class="logout-form">
-        <button type="submit" class="secondary-btn">Logout</button>
-      </form>
+      <nav id="mobile-header-menu" class="mobile-header-menu hidden" aria-label="Mobile menu">
+        <form action="/logout" method="POST" class="mobile-menu-form">
+          <button type="submit" class="secondary-btn mobile-menu-button">Logout</button>
+        </form>
+      </nav>
     </header>
 
     <section class="tool-panel">
@@ -36,7 +59,9 @@
 
           <section class="word-tools-box">
             <h2>Word Tools</h2>
-            <p class="word-tools-help">Find rhymes, count syllables, or generate a random word or phrase.</p>
+            <p class="word-tools-help">
+              Highlight a word in your lyrics to get rhymes, or type a word or phrase below for rhymes, syllables, or random inspiration.
+            </p>
 
             <div class="word-tools-controls">
               <input
@@ -51,12 +76,20 @@
                 <option value="word">Random word</option>
               </select>
 
+              <button type="button" id="get-selected-rhymes-btn">Rhymes for Selection</button>
               <button type="button" id="get-rhymes-btn">Rhymes</button>
               <button type="button" id="get-syllables-btn">Syllables</button>
               <button type="button" id="get-random-btn">Random</button>
             </div>
 
-            <div id="word-tools-status" class="word-tools-status">Enter a word or phrase to begin.</div>
+            <div id="selected-word-preview" class="selected-word-preview">
+              No word selected in lyrics yet.
+            </div>
+
+            <div id="word-tools-status" class="word-tools-status">
+              Enter a word or phrase to begin.
+            </div>
+
             <div id="word-tools-results" class="word-tools-results"></div>
           </section>
 
