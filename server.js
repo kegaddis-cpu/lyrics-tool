@@ -1,17 +1,29 @@
+const path = require("path");
 const express = require("express");
 const session = require("express-session");
 const { createClient } = require("redis");
 const { RedisStore } = require("connect-redis");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.set("trust proxy", 1);
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
 const redisClient = createClient({
   url: process.env.REDIS_URL
 });
 
+redisClient.on("error", (err) => {
+  console.error("Redis client error:", err);
+});
+
 redisClient.connect().catch(console.error);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
   session({
@@ -20,7 +32,7 @@ app.use(
       prefix: "lyrics-helper:"
     }),
     name: "lyrics.sid",
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "change-this-secret-in-production",
     resave: false,
     saveUninitialized: false,
     rolling: true,
@@ -32,3 +44,198 @@ app.use(
     }
   })
 );
+
+function requireAuth(req, res, next) {
+  if (req.session && req.session.user) {
+    return next();
+  }
+
+  return res.redirect("/login");
+}
+
+function countWords(text) {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+function detectSections(lines) {
+  const matches = [];
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (/^\[(.+)\]$/.test(trimmed)) {
+      matches.push(trimmed);
+    }
+  });
+
+  return matches;
+}
+
+function findLongestLine(lines) {
+  let longest = "";
+
+  for (const line of lines) {
+    if (line.trim().length > longest.trim().length) {
+      longest = line;
+    }
+  }
+
+  return longest;
+}
+
+app.get("/login", (req, res) => {
+  if (req.session && req.session.user) {
+    return res.redirect("/");
+  }
+
+  res.render("login", {
+    error: null
+  });
+});
+
+app.post("/login", (req, res, next) => {
+  const { password } = req.body;
+
+  const appPassword = process.env.APP_PASSWORD;
+
+  if (!appPassword) {
+    return res.status(500).send("APP_PASSWORD is not set on the server.");
+  }
+
+  if (password !== appPassword) {
+    return res.status(401).render("login", {
+      error: "Incorrect password."
+    });
+  }
+
+  req.session.regenerate((err) => {
+    if (err) return next(err);
+
+    req.session.user = {
+      authenticated: true
+    };
+
+    req.session.save((saveErr) => {
+      if (saveErr) return next(saveErr);
+      return res.redirect("/");
+    });
+  });
+});
+
+app.post("/logout", (req, res, next) => {
+  if (!req.session) {
+    return res.redirect("/login");
+  }
+
+  req.session.user = null;
+
+  req.session.save((err) => {
+    if (err) return next(err);
+
+    req.session.regenerate((regenErr) => {
+      if (regenErr) return next(regenErr);
+      return res.redirect("/login");
+    });
+  });
+});
+
+app.get("/", requireAuth, (req, res) => {
+  res.render("index");
+});
+
+app.post("/api/analyze", requireAuth, (req, res) => {
+  const lyrics = req.body.lyrics || "";
+  const rawLines = lyrics.split("\n");
+  const nonEmptyLines = rawLines.filter((line) => line.trim() !== "");
+  const detectedSections = detectSections(rawLines);
+  const totalWords = countWords(lyrics);
+  const avgWords =
+    nonEmptyLines.length > 0 ? (totalWords / nonEmptyLines.length).toFixed(1) : "0";
+
+  res.json({
+    lineCount: nonEmptyLines.length,
+    wordCount: totalWords,
+    averageWordsPerLine: avgWords,
+    sectionCount: detectedSections.length,
+    detectedSections,
+    longestLine: findLongestLine(rawLines)
+  });
+});
+
+app.get("/api/word-tools/rhymes", requireAuth, (req, res) => {
+  const word = (req.query.word || "").toString().trim();
+
+  if (!word) {
+    return res.json({
+      word: "",
+      results: []
+    });
+  }
+
+  const fallbackRhymes = [
+    `${word} time`,
+    `${word} light`,
+    `${word} fire`,
+    `${word} sky`,
+    `${word} way`
+  ];
+
+  return res.json({
+    word,
+    results: fallbackRhymes
+  });
+});
+
+app.get("/api/word-tools/syllables", requireAuth, (req, res) => {
+  const text = (req.query.word || "").toString().trim();
+
+  if (!text) {
+    return res.json({
+      text: "",
+      syllables: 0
+    });
+  }
+
+  const parts = text.toLowerCase().match(/[aeiouy]+/g);
+  const syllables = parts ? parts.length : 1;
+
+  return res.json({
+    text,
+    syllables
+  });
+});
+
+app.get("/api/word-tools/random", requireAuth, (req, res) => {
+  const topic = (req.query.topic || "").toString().trim();
+  const mode = (req.query.mode || "word").toString();
+
+  const randomWords = ["midnight", "echo", "shadow", "ember", "velvet"];
+  const randomPhrases = [
+    "running through the silence",
+    "ghost light on the avenue",
+    "holding onto broken time",
+    "dancing with the static",
+    "fire underneath the rain"
+  ];
+
+  const pool = mode === "phrase" ? randomPhrases : randomWords;
+  const result = pool[Math.floor(Math.random() * pool.length)];
+
+  return res.json({
+    mode,
+    topic,
+    result
+  });
+});
+
+app.use((req, res) => {
+  res.status(404).send("Page not found.");
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send("Internal server error.");
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
