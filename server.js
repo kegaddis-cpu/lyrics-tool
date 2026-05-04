@@ -125,7 +125,13 @@ app.post("/logout", (req, res, next) => {
     return res.redirect("/login");
   }
 
-  req.session.user = null;
+  req.session.destroy((err) => {
+    if (err) return next(err);
+
+    res.clearCookie("lyrics.sid");
+    return res.redirect("/login");
+  });
+});  req.session.user = null;
 
   req.session.save((err) => {
     if (err) return next(err);
