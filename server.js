@@ -94,7 +94,6 @@ app.get("/login", (req, res) => {
 
 app.post("/login", (req, res, next) => {
   const { password } = req.body;
-
   const appPassword = process.env.APP_PASSWORD;
 
   if (!appPassword) {
@@ -239,4 +238,3 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-const PORT = process.env.PORT || 3000;
