@@ -19,6 +19,28 @@ redisClient.on("error", (err) => {
   console.error("Redis error:", err);
 });
 
+function normalizeText(value) {
+  return (value || "").trim().toLowerCase();
+}
+
+async function fetchDatamuse(params) {
+  const url = new URL("https://api.datamuse.com/words");
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Datamuse error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 async function startServer() {
   if (!REDIS_URL) {
     throw new Error("Missing REDIS_URL environment variable");
@@ -180,6 +202,102 @@ async function startServer() {
       parsedSections,
       longestLine
     });
+  });
+
+  app.get("/api/word-tools/rhymes", requireApiAuth, async (req, res) => {
+    try {
+      const word = normalizeText(req.query.word);
+
+      if (!word) {
+        return res.status(400).json({ error: "Word is required" });
+      }
+
+      const data = await fetchDatamuse({
+        rel_rhy: word,
+        max: 16
+      });
+
+      return res.json({
+        word,
+        results: data.map((item) => item.word)
+      });
+    } catch (error) {
+      console.error("Rhymes error:", error);
+      return res.status(500).json({ error: "Failed to fetch rhymes" });
+    }
+  });
+
+  app.get("/api/word-tools/syllables", requireApiAuth, async (req, res) => {
+    try {
+      const text = normalizeText(req.query.word);
+
+      if (!text) {
+        return res.status(400).json({ error: "Word or phrase is required" });
+      }
+
+      const data = await fetchDatamuse({
+        sp: text,
+        md: "s",
+        max: 1
+      });
+
+      const match = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+      return res.json({
+        text,
+        syllables: match && typeof match.numSyllables === "number" ? match.numSyllables : null
+      });
+    } catch (error) {
+      console.error("Syllables error:", error);
+      return res.status(500).json({ error: "Failed to fetch syllables" });
+    }
+  });
+
+  app.get("/api/word-tools/random", requireApiAuth, async (req, res) => {
+    try {
+      const topic = normalizeText(req.query.topic);
+      const mode = normalizeText(req.query.mode) || "phrase";
+
+      const params = {
+        max: 40
+      };
+
+      if (topic) {
+        params.ml = topic;
+      } else {
+        const seeds = ["love", "night", "dream", "fire", "heart", "rain", "road", "light"];
+        params.ml = seeds[Math.floor(Math.random() * seeds.length)];
+      }
+
+      const data = await fetchDatamuse(params);
+
+      let results = data.filter((item) => item.word);
+
+      if (mode === "word") {
+        results = results.filter((item) => !item.word.includes(" "));
+      }
+
+      if (mode === "phrase") {
+        const multi = results.filter((item) => item.word.includes(" "));
+        if (multi.length > 0) {
+          results = multi;
+        }
+      }
+
+      if (results.length === 0) {
+        return res.json({ result: null, mode });
+      }
+
+      const chosen = results[Math.floor(Math.random() * results.length)];
+
+      return res.json({
+        result: chosen.word,
+        mode
+      });
+    } catch (error) {
+      console.error("Random word/phrase error:", error);
+      return res.status(500).json({ error: "Failed to fetch random result" });
+    }
   });
 
   app.get("/", requireAuth, (req, res) => {
