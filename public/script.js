@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     wordToolsResults.innerHTML = html;
   }
 
-  function getSelectedWordFromLyrics() {
+  function getSelectedTextFromLyrics() {
     const start = lyricsInput.selectionStart ?? 0;
     const end = lyricsInput.selectionEnd ?? 0;
     const selectedText = lyricsInput.value.slice(start, end).trim();
@@ -79,13 +79,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateSelectedWordPreview() {
-    const selectedWord = getSelectedWordFromLyrics();
+    const selectedText = getSelectedTextFromLyrics();
 
-    if (selectedWord) {
-      selectedWordPreview.textContent = `Selected in lyrics: "${selectedWord}"`;
+    if (selectedText) {
+      selectedWordPreview.textContent = `Selected in lyrics: "${selectedText}"`;
     } else {
-      selectedWordPreview.textContent = "No word selected in lyrics yet.";
+      selectedWordPreview.textContent = "No word or phrase selected in lyrics yet.";
     }
+  }
+
+  function getToolText() {
+    const selectedText = getSelectedTextFromLyrics();
+    if (selectedText) {
+      wordToolsInput.value = selectedText;
+      return selectedText;
+    }
+
+    const typedText = wordToolsInput.value.trim();
+    if (typedText) {
+      return typedText;
+    }
+
+    return "";
   }
 
   async function fetchWordToolsJson(url) {
@@ -170,18 +185,19 @@ document.addEventListener("DOMContentLoaded", () => {
     attachWordChipHandlers();
   }
 
-  async function runRhymesSearch(word, sourceLabel) {
-    if (!word) {
-      setWordToolsStatus("Select a word in the lyrics or type one first.");
+  async function runRhymesSearch() {
+    const text = getToolText();
+
+    if (!text) {
+      setWordToolsStatus("Select a word or phrase in the lyrics, or type one first.");
       setWordToolsResults("");
       return;
     }
 
-    wordToolsInput.value = word;
-    setWordToolsStatus(`Finding rhymes for "${word}" from ${sourceLabel}...`);
+    setWordToolsStatus(`Finding rhymes for "${text}"...`);
 
     try {
-      const data = await fetchWordToolsJson(`/api/word-tools/rhymes?word=${encodeURIComponent(word)}`);
+      const data = await fetchWordToolsJson(`/api/word-tools/rhymes?word=${encodeURIComponent(text)}`);
       if (!data) return;
 
       setWordToolsStatus(`Rhymes for "${data.word}"`);
@@ -189,6 +205,55 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error(error);
       setWordToolsStatus("Could not fetch rhymes right now.");
+      setWordToolsResults("");
+    }
+  }
+
+  async function runSyllablesSearch() {
+    const text = getToolText();
+
+    if (!text) {
+      setWordToolsStatus("Select a word or phrase in the lyrics, or type one first.");
+      setWordToolsResults("");
+      return;
+    }
+
+    setWordToolsStatus(`Counting syllables for "${text}"...`);
+
+    try {
+      const data = await fetchWordToolsJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
+      if (!data) return;
+
+      setWordToolsStatus(`Syllable result for "${data.text}"`);
+      renderSyllableResult(data.text, data.syllables);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch syllable data right now.");
+      setWordToolsResults("");
+    }
+  }
+
+  async function runRandomSearch() {
+    const topic = getToolText();
+    const mode = randomModeSelect.value;
+
+    setWordToolsStatus(
+      topic
+        ? `Finding a random ${mode} related to "${topic}"...`
+        : `Finding a random ${mode}...`
+    );
+
+    try {
+      const data = await fetchWordToolsJson(
+        `/api/word-tools/random?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`
+      );
+      if (!data) return;
+
+      setWordToolsStatus(`Random ${data.mode} ready.`);
+      renderRandomResult(data.result, data.mode);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch a random result right now.");
       setWordToolsResults("");
     }
   }
@@ -382,64 +447,10 @@ document.addEventListener("DOMContentLoaded", () => {
   lyricsInput.addEventListener("keyup", updateSelectedWordPreview);
   lyricsInput.addEventListener("select", updateSelectedWordPreview);
 
-  getSelectedRhymesBtn.addEventListener("click", async () => {
-    const selectedWord = getSelectedWordFromLyrics();
-    await runRhymesSearch(selectedWord, "your lyrics selection");
-  });
-
-  getRhymesBtn.addEventListener("click", async () => {
-    const word = wordToolsInput.value.trim();
-    await runRhymesSearch(word, "the word tools input");
-  });
-
-  getSyllablesBtn.addEventListener("click", async () => {
-    const text = wordToolsInput.value.trim();
-
-    if (!text) {
-      setWordToolsStatus("Type a word or phrase first.");
-      setWordToolsResults("");
-      return;
-    }
-
-    setWordToolsStatus(`Counting syllables for "${text}"...`);
-
-    try {
-      const data = await fetchWordToolsJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
-      if (!data) return;
-
-      setWordToolsStatus(`Syllable result for "${data.text}"`);
-      renderSyllableResult(data.text, data.syllables);
-    } catch (error) {
-      console.error(error);
-      setWordToolsStatus("Could not fetch syllable data right now.");
-      setWordToolsResults("");
-    }
-  });
-
-  getRandomBtn.addEventListener("click", async () => {
-    const topic = wordToolsInput.value.trim();
-    const mode = randomModeSelect.value;
-
-    setWordToolsStatus(
-      topic
-        ? `Finding a random ${mode} related to "${topic}"...`
-        : `Finding a random ${mode}...`
-    );
-
-    try {
-      const data = await fetchWordToolsJson(
-        `/api/word-tools/random?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`
-      );
-      if (!data) return;
-
-      setWordToolsStatus(`Random ${data.mode} ready.`);
-      renderRandomResult(data.result, data.mode);
-    } catch (error) {
-      console.error(error);
-      setWordToolsStatus("Could not fetch a random result right now.");
-      setWordToolsResults("");
-    }
-  });
+  getSelectedRhymesBtn.addEventListener("click", runRhymesSearch);
+  getRhymesBtn.addEventListener("click", runRhymesSearch);
+  getSyllablesBtn.addEventListener("click", runSyllablesSearch);
+  getRandomBtn.addEventListener("click", runRandomSearch);
 
   lyricsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -484,9 +495,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   clearButton.addEventListener("click", () => {
     lyricsInput.value = "";
+    wordToolsInput.value = "";
     clearDraft();
     resetResults();
     updateSelectedWordPreview();
+    setWordToolsResults("");
     lyricsInput.focus();
   });
 
