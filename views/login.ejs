@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login | Lyrics Helper</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="login-page">
+    <section class="login-card" aria-labelledby="login-title">
+      <h1 id="login-title">Lyrics Helper</h1>
+      <p class="login-subtitle">
+        Enter your password to open the app.
+      </p>
+
+      <form action="/login" method="POST" class="login-form">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter password"
+          required
+          autocomplete="current-password"
+          <%= error ? 'aria-invalid="true"' : "" %>
+        />
+
+        <button type="submit">Login</button>
+      </form>
+
+      <% if (error) { %>
+        <p class="login-error" role="alert"><%= error %></p>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>
