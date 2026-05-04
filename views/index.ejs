@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lyrics Helper</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <div class="app-header-top">
+        <div>
+          <h1>Lyrics Helper</h1>
+          <p class="app-subtitle">
+            Write, organize, and analyze your lyrics in one place.
+          </p>
+        </div>
+
+        <div class="desktop-header-actions">
+          <form action="/logout" method="POST" class="logout-form">
+            <button type="submit" class="secondary-btn">Logout</button>
+          </form>
+        </div>
+
+        <button
+          id="mobile-menu-toggle"
+          class="mobile-menu-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="mobile-header-menu"
+          aria-label="Open menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+      <div id="mobile-header-menu" class="mobile-header-menu hidden">
+        <form action="/logout" method="POST" class="mobile-menu-form">
+          <button type="submit" class="secondary-btn mobile-menu-button">Logout</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="tool-panel">
+      <section class="input-column">
+        <form id="lyrics-form">
+          <label for="lyrics-input">Lyrics</label>
+
+          <div class="label-toolbar">
+            <button type="button" class="label-btn" data-label="[Verse]">Verse</button>
+            <button type="button" class="label-btn" data-label="[Chorus]">Chorus</button>
+            <button type="button" class="label-btn" data-label="[Bridge]">Bridge</button>
+            <button type="button" class="label-btn" data-label="[Outro]">Outro</button>
+          </div>
+
+          <textarea
+            id="lyrics-input"
+            name="lyrics"
+            placeholder="Write or paste your lyrics here..."
+          ></textarea>
+
+          <div class="button-row">
+            <button type="submit">Analyze</button>
+            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="sidebar-column">
+        <section class="results-panel">
+          <div class="word-tools-box">
+            <h2>Word Tools</h2>
+            <p class="word-tools-help">
+              Select a word in the lyrics or type one below.
+            </p>
+
+            <p id="selected-word-preview" class="selected-word-preview">
+              No word or phrase selected in lyrics yet.
+            </p>
+
+            <div class="word-tools-controls">
+              <input
+                type="text"
+                id="word-tools-input"
+                placeholder="Enter a word or phrase"
+              />
+              <select id="random-mode-select">
+                <option value="word">Random word</option>
+                <option value="phrase">Random phrase</option>
+              </select>
+              <button type="button" id="get-selected-rhymes-btn">Rhymes for Selected</button>
+              <button type="button" id="get-rhymes-btn">Get Rhymes</button>
+              <button type="button" id="get-syllables-btn">Count Syllables</button>
+              <button type="button" id="get-random-btn">Get Random</button>
+            </div>
+
+            <p id="word-tools-status" class="word-tools-status">
+              Try a rhyme, syllable count, or random prompt.
+            </p>
+
+            <div id="word-tools-results" class="word-tools-results"></div>
+          </div>
+        </section>
+
+        <section class="sections-panel">
+          <h2>Analysis</h2>
+          <p id="status-message">Enter some lyrics and click Analyze.</p>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Lines</h3>
+              <p id="line-count">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Words</h3>
+              <p id="word-count">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Average Words / Line</h3>
+              <p id="average-words-per-line">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Sections</h3>
+              <p id="section-count">0</p>
+            </div>
+          </div>
+
+          <div class="detail-box">
+            <h3>Detected Sections</h3>
+            <p id="sections-empty">No sections detected yet.</p>
+            <ul id="sections-list"></ul>
+          </div>
+
+          <div class="detail-box">
+            <h3>Longest Line</h3>
+            <p id="longest-line-text">Nothing analyzed yet.</p>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/script.js"></script>
+</body>
+</html>
