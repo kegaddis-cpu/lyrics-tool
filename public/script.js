@@ -17,6 +17,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const sectionsList = document.getElementById("sections-list");
   const longestLineText = document.getElementById("longest-line-text");
 
+  const wordToolsInput = document.getElementById("word-tools-input");
+  const randomModeSelect = document.getElementById("random-mode-select");
+  const getRhymesBtn = document.getElementById("get-rhymes-btn");
+  const getSyllablesBtn = document.getElementById("get-syllables-btn");
+  const getRandomBtn = document.getElementById("get-random-btn");
+  const wordToolsStatus = document.getElementById("word-tools-status");
+  const wordToolsResults = document.getElementById("word-tools-results");
+
   const STORAGE_KEY = "lyrics-helper-draft";
 
   let draggedCard = null;
@@ -34,6 +42,86 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function clearDraft() {
     localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function escapeHtml(value) {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setWordToolsStatus(message) {
+    wordToolsStatus.textContent = message;
+  }
+
+  function setWordToolsResults(html) {
+    wordToolsResults.innerHTML = html;
+  }
+
+  async function fetchWordToolsJson(url) {
+    const response = await fetch(url);
+
+    if (response.status === 401) {
+      window.location.href = "/login";
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  function renderWordList(title, words) {
+    if (!Array.isArray(words) || words.length === 0) {
+      setWordToolsResults(`<p class="word-tools-empty">No results found.</p>`);
+      return;
+    }
+
+    const items = words
+      .map((word) => `<span class="word-chip">${escapeHtml(word)}</span>`)
+      .join("");
+
+    setWordToolsResults(`
+      <div class="word-tools-result-block">
+        <h3>${escapeHtml(title)}</h3>
+        <div class="word-chip-list">${items}</div>
+      </div>
+    `);
+  }
+
+  function renderSyllableResult(text, syllables) {
+    if (syllables === null || syllables === undefined) {
+      setWordToolsResults(`<p class="word-tools-empty">No syllable data found for <strong>${escapeHtml(text)}</strong>.</p>`);
+      return;
+    }
+
+    setWordToolsResults(`
+      <div class="word-tools-result-block">
+        <h3>Syllable Count</h3>
+        <p><strong>${escapeHtml(text)}</strong> has ${syllables} syllable${syllables === 1 ? "" : "s"}.</p>
+      </div>
+    `);
+  }
+
+  function renderRandomResult(result, mode) {
+    if (!result) {
+      setWordToolsResults(`<p class="word-tools-empty">No random ${mode} found.</p>`);
+      return;
+    }
+
+    setWordToolsResults(`
+      <div class="word-tools-result-block">
+        <h3>Random ${mode === "word" ? "Word" : "Phrase"}</h3>
+        <div class="word-chip-list">
+          <span class="word-chip">${escapeHtml(result)}</span>
+        </div>
+      </div>
+    `);
   }
 
   function insertAtCursor(textToInsert) {
@@ -215,6 +303,79 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   lyricsInput.addEventListener("input", saveDraft);
+
+  getRhymesBtn.addEventListener("click", async () => {
+    const word = wordToolsInput.value.trim();
+
+    if (!word) {
+      setWordToolsStatus("Type a word first.");
+      setWordToolsResults("");
+      return;
+    }
+
+    setWordToolsStatus(`Finding rhymes for "${word}"...`);
+
+    try {
+      const data = await fetchWordToolsJson(`/api/word-tools/rhymes?word=${encodeURIComponent(word)}`);
+      if (!data) return;
+
+      setWordToolsStatus(`Rhymes for "${data.word}"`);
+      renderWordList(`Rhymes for "${data.word}"`, data.results || []);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch rhymes right now.");
+      setWordToolsResults("");
+    }
+  });
+
+  getSyllablesBtn.addEventListener("click", async () => {
+    const text = wordToolsInput.value.trim();
+
+    if (!text) {
+      setWordToolsStatus("Type a word or phrase first.");
+      setWordToolsResults("");
+      return;
+    }
+
+    setWordToolsStatus(`Counting syllables for "${text}"...`);
+
+    try {
+      const data = await fetchWordToolsJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
+      if (!data) return;
+
+      setWordToolsStatus(`Syllable result for "${data.text}"`);
+      renderSyllableResult(data.text, data.syllables);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch syllable data right now.");
+      setWordToolsResults("");
+    }
+  });
+
+  getRandomBtn.addEventListener("click", async () => {
+    const topic = wordToolsInput.value.trim();
+    const mode = randomModeSelect.value;
+
+    setWordToolsStatus(
+      topic
+        ? `Finding a random ${mode} related to "${topic}"...`
+        : `Finding a random ${mode}...`
+    );
+
+    try {
+      const data = await fetchWordToolsJson(
+        `/api/word-tools/random?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`
+      );
+      if (!data) return;
+
+      setWordToolsStatus(`Random ${data.mode} ready.`);
+      renderRandomResult(data.result, data.mode);
+    } catch (error) {
+      console.error(error);
+      setWordToolsStatus("Could not fetch a random result right now.");
+      setWordToolsResults("");
+    }
+  });
 
   lyricsForm.addEventListener("submit", async (event) => {
     event.preventDefault();
