@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  /style.css" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <main class="app">
@@ -47,7 +47,7 @@
     <section class="tool-panel">
       <div class="input-column">
         <form id="lyrics-form">
-          abel for="lyrics-input">Lyrics</label>
+          <label for="lyrics-input">Lyrics</label>
 
           <div class="label-toolbar" aria-label="Section label shortcuts">
             <button type="button" class="label-btn" data-label="Verse">Verse</button>
@@ -56,42 +56,6 @@
             <button type="button" class="label-btn" data-label="Bridge">Bridge</button>
             <button type="button" class="label-btn" data-label="Outro">Outro</button>
           </div>
-
-          <section class="word-tools-box">
-            <h2>Word Tools</h2>
-            <p class="word-tools-help">
-              Highlight a word or phrase in your lyrics to use the tools, or type something below for rhymes, syllables, or random inspiration.
-            </p>
-
-            <div class="word-tools-controls">
-              <input
-                type="text"
-                id="word-tools-input"
-                placeholder="Type a word or phrase"
-                autocomplete="off"
-              />
-
-              <select id="random-mode-select">
-                <option value="phrase">Random phrase</option>
-                <option value="word">Random word</option>
-              </select>
-
-              <button type="button" id="get-selected-rhymes-btn">Rhymes (Selection / Input)</button>
-              <button type="button" id="get-rhymes-btn">More Rhymes</button>
-              <button type="button" id="get-syllables-btn">Syllables</button>
-              <button type="button" id="get-random-btn">Random</button>
-            </div>
-
-            <div id="selected-word-preview" class="selected-word-preview">
-              No word or phrase selected in lyrics yet.
-            </div>
-
-            <div id="word-tools-status" class="word-tools-status">
-              Select a word or phrase in the lyrics, or type one in the input.
-            </div>
-
-            <div id="word-tools-results" class="word-tools-results"></div>
-          </section>
 
           <textarea
             id="lyrics-input"
@@ -116,6 +80,42 @@
       </div>
 
       <aside class="results-panel" aria-labelledby="results-heading">
+        <section class="word-tools-box">
+          <h2>Word Tools</h2>
+          <p class="word-tools-help">
+            Highlight a word or phrase in your lyrics to use the tools, or type something below for rhymes, syllables, or random inspiration.
+          </p>
+
+          <div class="word-tools-controls">
+            <input
+              type="text"
+              id="word-tools-input"
+              placeholder="Type a word or phrase"
+              autocomplete="off"
+            />
+
+            <select id="random-mode-select">
+              <option value="phrase">Random phrase</option>
+              <option value="word">Random word</option>
+            </select>
+
+            <button type="button" id="get-selected-rhymes-btn">Rhymes (Selection / Input)</button>
+            <button type="button" id="get-rhymes-btn">More Rhymes</button>
+            <button type="button" id="get-syllables-btn">Syllables</button>
+            <button type="button" id="get-random-btn">Random</button>
+          </div>
+
+          <div id="selected-word-preview" class="selected-word-preview">
+            No word or phrase selected in lyrics yet.
+          </div>
+
+          <div id="word-tools-status" class="word-tools-status">
+            Select a word or phrase in the lyrics, or type one in the input.
+          </div>
+
+          <div id="word-tools-results" class="word-tools-results"></div>
+        </section>
+
         <h2 id="results-heading">Analysis</h2>
         <p id="status-message">Enter some lyrics and click Analyze.</p>
 
