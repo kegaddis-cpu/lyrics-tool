@@ -70,6 +70,38 @@ function detectSections(lines) {
   return matches;
 }
 
+function parseSections(lines) {
+  const sections = [];
+  let currentLabel = "Unlabeled";
+  let currentLines = [];
+  let idCounter = 1;
+
+  function pushSection() {
+    if (currentLines.length === 0) return;
+    sections.push({
+      id: String(idCounter++),
+      label: currentLabel,
+      content: currentLines.join("\n")
+    });
+    currentLines = [];
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const match = trimmed.match(/^\[(.+)\]$/);
+
+    if (match) {
+      pushSection();
+      currentLabel = `[${match[1]}]`;
+    } else {
+      currentLines.push(line);
+    }
+  }
+
+  pushSection();
+  return sections;
+}
+
 function findLongestLine(lines) {
   let longest = "";
 
@@ -131,16 +163,6 @@ app.post("/logout", (req, res, next) => {
     res.clearCookie("lyrics.sid");
     return res.redirect("/login");
   });
-});  req.session.user = null;
-
-  req.session.save((err) => {
-    if (err) return next(err);
-
-    req.session.regenerate((regenErr) => {
-      if (regenErr) return next(regenErr);
-      return res.redirect("/login");
-    });
-  });
 });
 
 app.get("/", requireAuth, (req, res) => {
@@ -152,6 +174,7 @@ app.post("/api/analyze", requireAuth, (req, res) => {
   const rawLines = lyrics.split("\n");
   const nonEmptyLines = rawLines.filter((line) => line.trim() !== "");
   const detectedSections = detectSections(rawLines);
+  const parsedSections = parseSections(rawLines);
   const totalWords = countWords(lyrics);
   const avgWords =
     nonEmptyLines.length > 0 ? (totalWords / nonEmptyLines.length).toFixed(1) : "0";
@@ -162,6 +185,7 @@ app.post("/api/analyze", requireAuth, (req, res) => {
     averageWordsPerLine: avgWords,
     sectionCount: detectedSections.length,
     detectedSections,
+    parsedSections,
     longestLine: findLongestLine(rawLines)
   });
 });
