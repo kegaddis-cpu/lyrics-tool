@@ -31,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const mobileHeaderMenu = document.getElementById("mobile-header-menu");
 
   const STORAGE_KEY = "lyrics-helper-draft";
-
   let draggedCard = null;
 
   function autoResizeTextarea() {
