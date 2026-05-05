@@ -136,8 +136,8 @@ body {
 
 .tool-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 20px;
   align-items: start;
 }
 
@@ -149,6 +149,22 @@ body {
 .sidebar-column {
   display: grid;
   gap: 20px;
+}
+
+/* Tablet */
+@media (min-width: 768px) {
+  .tool-panel {
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.85fr);
+    gap: 20px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .tool-panel {
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+    gap: 24px;
+  }
 }
 
 #lyrics-form,
