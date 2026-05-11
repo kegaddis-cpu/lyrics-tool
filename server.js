@@ -3,6 +3,7 @@ const express = require("express");
 const session = require("express-session");
 const { createClient } = require("redis");
 const { RedisStore } = require("connect-redis");
+const mysql = require("mysql2/promise");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,15 @@ redisClient.on("error", (err) => {
 });
 
 redisClient.connect().catch(console.error);
+
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -146,9 +156,7 @@ app.get("/login", (req, res) => {
     return res.redirect("/");
   }
 
-  res.render("login", {
-    error: null
-  });
+  res.render("login", { error: null });
 });
 
 app.post("/login", (req, res, next) => {
@@ -160,17 +168,13 @@ app.post("/login", (req, res, next) => {
   }
 
   if (password !== appPassword) {
-    return res.status(401).render("login", {
-      error: "Incorrect password."
-    });
+    return res.status(401).render("login", { error: "Incorrect password." });
   }
 
   req.session.regenerate((err) => {
     if (err) return next(err);
 
-    req.session.user = {
-      authenticated: true
-    };
+    req.session.user = { authenticated: true };
 
     req.session.save((saveErr) => {
       if (saveErr) return next(saveErr);
@@ -196,28 +200,31 @@ app.get("/", requireAuth, (req, res) => {
   res.render("index");
 });
 
+app.get("/api/db-test", requireAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT 1 + 1 AS result");
+    return res.json({ ok: true, result: rows[0].result });
+  } catch (err) {
+    console.error("DB test error:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.get("/api/draft", requireAuth, (req, res) => {
-  return res.json({
-    lyrics: req.session.draftLyrics || ""
-  });
+  return res.json({ lyrics: req.session.draftLyrics || "" });
 });
 
 app.post("/api/draft", requireAuth, (req, res) => {
   const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
   req.session.draftLyrics = lyrics;
 
-  return res.json({
-    success: true,
-    savedAt: new Date().toISOString()
-  });
+  return res.json({ success: true, savedAt: new Date().toISOString() });
 });
 
 app.delete("/api/draft", requireAuth, (req, res) => {
   req.session.draftLyrics = "";
 
-  return res.json({
-    success: true
-  });
+  return res.json({ success: true });
 });
 
 app.post("/api/analyze", requireAuth, (req, res) => {
@@ -247,10 +254,7 @@ app.get("/api/word-tools/rhymes", requireAuth, (req, res) => {
   const word = (req.query.word || "").toString().trim();
 
   if (!word) {
-    return res.json({
-      word: "",
-      results: []
-    });
+    return res.json({ word: "", results: [] });
   }
 
   const fallbackRhymes = [
@@ -261,29 +265,20 @@ app.get("/api/word-tools/rhymes", requireAuth, (req, res) => {
     `${word} way`
   ];
 
-  return res.json({
-    word,
-    results: fallbackRhymes
-  });
+  return res.json({ word, results: fallbackRhymes });
 });
 
 app.get("/api/word-tools/syllables", requireAuth, (req, res) => {
   const text = (req.query.word || "").toString().trim();
 
   if (!text) {
-    return res.json({
-      text: "",
-      syllables: 0
-    });
+    return res.json({ text: "", syllables: 0 });
   }
 
   const parts = text.toLowerCase().match(/[aeiouy]+/g);
   const syllables = parts ? parts.length : 1;
 
-  return res.json({
-    text,
-    syllables
-  });
+  return res.json({ text, syllables });
 });
 
 app.get("/api/word-tools/random", requireAuth, (req, res) => {
@@ -302,11 +297,7 @@ app.get("/api/word-tools/random", requireAuth, (req, res) => {
   const pool = mode === "phrase" ? randomPhrases : randomWords;
   const result = pool[Math.floor(Math.random() * pool.length)];
 
-  return res.json({
-    mode,
-    topic,
-    result
-  });
+  return res.json({ mode, topic, result });
 });
 
 app.use((req, res) => {
