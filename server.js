@@ -57,13 +57,34 @@ function countWords(text) {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+function normalizeSectionLabel(line) {
+  const trimmed = line.trim();
+
+  if (!trimmed) return null;
+
+  const bracketMatch = trimmed.match(/^\[(.+)\]$/);
+  if (bracketMatch) {
+    return bracketMatch[1].trim();
+  }
+
+  const plainSectionMatch = trimmed.match(
+    /^(verse|chorus|pre-chorus|post-chorus|bridge|outro|intro|hook|refrain)(\s*\d+)?$/i
+  );
+
+  if (plainSectionMatch) {
+    return trimmed;
+  }
+
+  return null;
+}
+
 function detectSections(lines) {
   const matches = [];
 
   lines.forEach((line) => {
-    const trimmed = line.trim();
-    if (/^\[(.+)\]$/.test(trimmed)) {
-      matches.push(trimmed);
+    const label = normalizeSectionLabel(line);
+    if (label) {
+      matches.push(label);
     }
   });
 
@@ -77,22 +98,28 @@ function parseSections(lines) {
   let idCounter = 1;
 
   function pushSection() {
-    if (currentLines.length === 0) return;
+    const content = currentLines.join("\n").trim();
+
+    if (!content) {
+      currentLines = [];
+      return;
+    }
+
     sections.push({
       id: String(idCounter++),
       label: currentLabel,
-      content: currentLines.join("\n")
+      content
     });
+
     currentLines = [];
   }
 
   for (const line of lines) {
-    const trimmed = line.trim();
-    const match = trimmed.match(/^\[(.+)\]$/);
+    const label = normalizeSectionLabel(line);
 
-    if (match) {
+    if (label) {
       pushSection();
-      currentLabel = `[${match[1]}]`;
+      currentLabel = label;
     } else {
       currentLines.push(line);
     }
