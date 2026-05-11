@@ -30,29 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const mobileMenuToggle = document.getElementById("mobile-menu-toggle");
   const mobileHeaderMenu = document.getElementById("mobile-header-menu");
 
-  const STORAGE_KEY = "lyrics-helper-draft";
   let draggedCard = null;
+  let draftSaveTimer = null;
+  let draftLoaded = false;
 
   function autoResizeTextarea() {
     if (!lyricsInput) return;
     lyricsInput.style.height = "auto";
     lyricsInput.style.height = `${lyricsInput.scrollHeight}px`;
-  }
-
-  function saveDraft() {
-    localStorage.setItem(STORAGE_KEY, lyricsInput.value);
-  }
-
-  function loadDraft() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved !== null) {
-      lyricsInput.value = saved;
-    }
-    autoResizeTextarea();
-  }
-
-  function clearDraft() {
-    localStorage.removeItem(STORAGE_KEY);
   }
 
   function escapeHtml(value) {
@@ -70,6 +55,73 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setWordToolsResults(html) {
     wordToolsResults.innerHTML = html;
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+
+    if (response.status === 401) {
+      window.location.href = "/login";
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Server returned ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async function loadDraftFromServer() {
+    try {
+      const data = await fetchJson("/api/draft");
+      if (!data) return;
+
+      if (typeof data.lyrics === "string" && data.lyrics.length > 0) {
+        lyricsInput.value = data.lyrics;
+      }
+
+      draftLoaded = true;
+      autoResizeTextarea();
+      updateSelectedWordPreview();
+    } catch (error) {
+      console.error("Draft load error:", error);
+    }
+  }
+
+  async function saveDraftToServer() {
+    if (!draftLoaded) return;
+
+    try {
+      await fetchJson("/api/draft", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          lyrics: lyricsInput.value
+        })
+      });
+    } catch (error) {
+      console.error("Draft save error:", error);
+    }
+  }
+
+  function scheduleDraftSave() {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(() => {
+      saveDraftToServer();
+    }, 700);
+  }
+
+  async function clearDraftOnServer() {
+    try {
+      await fetchJson("/api/draft", {
+        method: "DELETE"
+      });
+    } catch (error) {
+      console.error("Draft clear error:", error);
+    }
   }
 
   function getSelectedTextFromLyrics() {
@@ -107,21 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return "";
-  }
-
-  async function fetchWordToolsJson(url) {
-    const response = await fetch(url);
-
-    if (response.status === 401) {
-      window.location.href = "/login";
-      return null;
-    }
-
-    if (!response.ok) {
-      throw new Error(`Server returned ${response.status}`);
-    }
-
-    return response.json();
   }
 
   function attachWordChipHandlers() {
@@ -203,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setWordToolsStatus(`Finding rhymes for "${text}"...`);
 
     try {
-      const data = await fetchWordToolsJson(`/api/word-tools/rhymes?word=${encodeURIComponent(text)}`);
+      const data = await fetchJson(`/api/word-tools/rhymes?word=${encodeURIComponent(text)}`);
       if (!data) return;
 
       setWordToolsStatus(`Rhymes for "${data.word}"`);
@@ -227,7 +264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setWordToolsStatus(`Counting syllables for "${text}"...`);
 
     try {
-      const data = await fetchWordToolsJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
+      const data = await fetchJson(`/api/word-tools/syllables?word=${encodeURIComponent(text)}`);
       if (!data) return;
 
       setWordToolsStatus(`Syllable result for "${data.text}"`);
@@ -250,7 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     try {
-      const data = await fetchWordToolsJson(
+      const data = await fetchJson(
         `/api/word-tools/random?topic=${encodeURIComponent(topic)}&mode=${encodeURIComponent(mode)}`
       );
       if (!data) return;
@@ -279,9 +316,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const newPosition = (before + insertion).length;
     lyricsInput.focus();
     lyricsInput.setSelectionRange(newPosition, newPosition);
-    saveDraft();
     autoResizeTextarea();
     updateSelectedWordPreview();
+    scheduleDraftSave();
   }
 
   function syncTextareaFromCards() {
@@ -306,9 +343,9 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("\n\n");
 
     lyricsInput.value = rebuiltText;
-    saveDraft();
     autoResizeTextarea();
     updateSelectedWordPreview();
+    scheduleDraftSave();
   }
 
   function createSectionCard(section) {
@@ -447,9 +484,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   lyricsInput.addEventListener("input", () => {
-    saveDraft();
     autoResizeTextarea();
     updateSelectedWordPreview();
+    scheduleDraftSave();
   });
 
   lyricsInput.addEventListener("mouseup", updateSelectedWordPreview);
@@ -465,12 +502,12 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
 
     const lyrics = lyricsInput.value;
-    saveDraft();
     autoResizeTextarea();
 
     if (!lyrics.trim()) {
       resetResults();
       statusMessage.textContent = "Please enter some lyrics before analyzing.";
+      await saveDraftToServer();
       return;
     }
 
@@ -503,15 +540,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  clearButton.addEventListener("click", () => {
+  clearButton.addEventListener("click", async () => {
     lyricsInput.value = "";
     lyricsInput.style.height = "auto";
     wordToolsInput.value = "";
-    clearDraft();
     resetResults();
     updateSelectedWordPreview();
     setWordToolsResults("");
     lyricsInput.focus();
+    await clearDraftOnServer();
   });
 
   if (mobileMenuToggle && mobileHeaderMenu) {
@@ -529,8 +566,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  loadDraft();
   resetResults();
-  updateSelectedWordPreview();
-  autoResizeTextarea();
+  loadDraftFromServer();
 });
