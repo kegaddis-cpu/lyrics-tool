@@ -196,8 +196,34 @@ app.get("/", requireAuth, (req, res) => {
   res.render("index");
 });
 
+app.get("/api/draft", requireAuth, (req, res) => {
+  return res.json({
+    lyrics: req.session.draftLyrics || ""
+  });
+});
+
+app.post("/api/draft", requireAuth, (req, res) => {
+  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
+  req.session.draftLyrics = lyrics;
+
+  return res.json({
+    success: true,
+    savedAt: new Date().toISOString()
+  });
+});
+
+app.delete("/api/draft", requireAuth, (req, res) => {
+  req.session.draftLyrics = "";
+
+  return res.json({
+    success: true
+  });
+});
+
 app.post("/api/analyze", requireAuth, (req, res) => {
   const lyrics = req.body.lyrics || "";
+  req.session.draftLyrics = lyrics;
+
   const rawLines = lyrics.split("\n");
   const nonEmptyLines = rawLines.filter((line) => line.trim() !== "");
   const detectedSections = detectSections(rawLines);
