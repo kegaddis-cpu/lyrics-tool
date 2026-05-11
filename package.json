@@ -1,5 +1,3 @@
---- package.json ---
-
 {
   "name": "lyrics-helper",
   "version": "1.0.0",
@@ -20,5 +18,3 @@
     "node": "22.x"
   }
 }
-
---- end package.json ---
