@@ -1,3 +1,5 @@
+--- package.json ---
+
 {
   "name": "lyrics-helper",
   "version": "1.0.0",
@@ -11,10 +13,12 @@
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
+    "mysql2": "^3.11.0",
     "redis": "^4.7.0"
   },
   "engines": {
-  "node": "22.x"
+    "node": "22.x"
+  }
 }
-  "mysql2": "^3.11.0"
-}
+
+--- end package.json ---
