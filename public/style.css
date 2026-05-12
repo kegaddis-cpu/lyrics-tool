@@ -534,4 +534,13 @@ button:active,
   .login-page {
     padding: 20px 14px;
   }
+/* === START: addition to public/style.css === */
+
+.login-success {
+  margin-top: 14px;
+  color: #057a55;
+  font-weight: 700;
+}
+
+/* === END: addition to public/style.css === */
 }
