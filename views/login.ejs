@@ -1,3 +1,4 @@
+<!-- === START: views/login.ejs === -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,29 +11,45 @@
   <main class="login-page">
     <section class="login-card" aria-labelledby="login-title">
       <h1 id="login-title">Lyrics Helper</h1>
-      <p class="login-subtitle">
-        Enter your password to open the app.
-      </p>
+      <p class="login-subtitle">Welcome back. Log in to your account.</p>
+
+      <% if (registered) { %>
+        <p class="login-success" role="status">Account created! Please log in.</p>
+      <% } %>
 
       <form action="/login" method="POST" class="login-form">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="Your username"
+          required
+          autocomplete="username"
+        />
+
         <label for="password">Password</label>
         <input
           type="password"
           id="password"
           name="password"
-          placeholder="Enter password"
+          placeholder="Your password"
           required
           autocomplete="current-password"
-          <%= error ? 'aria-invalid="true"' : "" %>
         />
 
-        <button type="submit">Login</button>
+        <button type="submit">Log In</button>
       </form>
 
       <% if (error) { %>
         <p class="login-error" role="alert"><%= error %></p>
       <% } %>
+
+      <p class="login-subtitle" style="margin-top: 16px;">
+        New here? <a href="/register">Create an account</a>
+      </p>
     </section>
   </main>
 </body>
 </html>
+<!-- === END: views/login.ejs === -->
