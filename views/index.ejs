@@ -63,19 +63,6 @@
           ></textarea>
         </div>
 
-        <div class="tool-row">
-          <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
-          <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
-        </div>
-
-        <div id="toolResults" class="tool-results" hidden>
-          <div class="tool-results-head">
-            <h3 id="toolResultsTitle">Writing tools</h3>
-            <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
-          </div>
-          <div id="toolResultsBody" class="tool-results-body"></div>
-        </div>
-
         <div class="action-row">
           <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
           <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
@@ -138,6 +125,48 @@
             </div>
           </div>
         </details>
+
+        <details class="drawer" id="toolsDrawer">
+          <summary class="drawer-tab" title="Tools">
+            <span class="drawer-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
+                <path d="M13.5 7.5l3 3"></path>
+                <path d="M5 21h14"></path>
+              </svg>
+            </span>
+            <span class="drawer-tab-text">Tools</span>
+          </summary>
+
+          <div class="drawer-panel">
+            <div class="drawer-panel-header">
+              <div>
+                <p class="panel-kicker">Tools</p>
+                <h2>Writing tools</h2>
+              </div>
+            </div>
+            <p class="drawer-copy">Generate rhymes and random prompts without crowding the editor.</p>
+
+            <div class="tools-panel-body">
+              <div class="tool-row tool-row-drawer">
+                <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
+                <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
+              </div>
+
+              <div id="toolResults" class="tool-results" hidden>
+                <div class="tool-results-head">
+                  <h3 id="toolResultsTitle">Writing tools</h3>
+                  <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
+                </div>
+                <div id="toolResultsBody" class="tool-results-body"></div>
+              </div>
+
+              <div id="toolEmptyState" class="tool-empty-state">
+                <p class="empty-copy">Use Rhyming to get word ideas from your current line, or Random to spark a new phrase.</p>
+              </div>
+            </div>
+          </div>
+        </details>
       </aside>
     </main>
   </div>
@@ -158,10 +187,12 @@
     const saveStatus = document.getElementById("saveStatus");
     const libraryDrawer = document.getElementById("libraryDrawer");
     const analysisDrawer = document.getElementById("analysisDrawer");
+    const toolsDrawer = document.getElementById("toolsDrawer");
     const toolResults = document.getElementById("toolResults");
     const toolResultsTitle = document.getElementById("toolResultsTitle");
     const toolResultsBody = document.getElementById("toolResultsBody");
     const closeToolResultsBtn = document.getElementById("closeToolResultsBtn");
+    const toolEmptyState = document.getElementById("toolEmptyState");
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (match) {
@@ -183,7 +214,7 @@
     }
 
     function openOnlyDrawer(targetDrawer) {
-      [libraryDrawer, analysisDrawer].forEach((drawer) => {
+      [libraryDrawer, analysisDrawer, toolsDrawer].forEach((drawer) => {
         if (drawer !== targetDrawer) {
           drawer.removeAttribute("open");
         }
@@ -195,12 +226,15 @@
       toolResultsTitle.textContent = title;
       toolResultsBody.innerHTML = html;
       toolResults.hidden = false;
+      toolEmptyState.hidden = true;
+      openOnlyDrawer(toolsDrawer);
     }
 
     function hideToolResults() {
       toolResults.hidden = true;
       toolResultsTitle.textContent = "Writing tools";
       toolResultsBody.innerHTML = "";
+      toolEmptyState.hidden = false;
     }
 
     function getLastWord() {
@@ -295,6 +329,10 @@
 
     analysisDrawer.addEventListener("toggle", () => {
       if (analysisDrawer.open) openOnlyDrawer(analysisDrawer);
+    });
+
+    toolsDrawer.addEventListener("toggle", () => {
+      if (toolsDrawer.open) openOnlyDrawer(toolsDrawer);
     });
 
     closeToolResultsBtn.addEventListener("click", hideToolResults);
