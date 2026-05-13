@@ -24,14 +24,14 @@
       </div>
     </header>
 
-    <main class="dashboard-grid">
+    <main class="workspace-layout">
       <section class="panel panel-editor">
         <div class="panel-header">
           <div>
             <p class="panel-kicker">Editor</p>
             <h2>Write and save</h2>
           </div>
-          <p class="panel-copy">Draft lyrics, run analysis, and save songs to your account.</p>
+          <p class="panel-copy">Keep the writing area central and tuck tools to the side.</p>
         </div>
 
         <div class="meta-row">
@@ -59,7 +59,7 @@
           <textarea
             id="lyricsInput"
             placeholder="Write your lyrics here..."
-            rows="18"
+            rows="20"
           ></textarea>
         </div>
 
@@ -70,33 +70,42 @@
         </div>
 
         <p id="saveStatus" class="status-line"></p>
+      </section>
 
-        <section class="analysis-section">
-          <div class="section-header">
+      <aside class="side-rail">
+        <details class="rail-panel" open>
+          <summary class="rail-summary">
+            <div>
+              <p class="panel-kicker">Library</p>
+              <h2>My songs</h2>
+            </div>
+            <span class="rail-icon" aria-hidden="true">+</span>
+          </summary>
+
+          <div class="rail-body">
+            <p class="rail-copy">Load, update, and remove saved songs.</p>
+            <div id="songsList" class="songs-list">
+              <p class="empty-copy">Loading songs...</p>
+            </div>
+          </div>
+        </details>
+
+        <details class="rail-panel" open>
+          <summary class="rail-summary">
             <div>
               <p class="panel-kicker">Analysis</p>
               <h2>Song insights</h2>
             </div>
-          </div>
+            <span class="rail-icon" aria-hidden="true">+</span>
+          </summary>
 
-          <div id="analysisResults" class="analysis-results">
-            <p class="empty-copy">No analysis yet.</p>
+          <div class="rail-body">
+            <p class="rail-copy">Run structure and word-count analysis on the current draft.</p>
+            <div id="analysisResults" class="analysis-results">
+              <p class="empty-copy">No analysis yet.</p>
+            </div>
           </div>
-        </section>
-      </section>
-
-      <aside class="panel panel-sidebar">
-        <div class="panel-header sidebar-header">
-          <div>
-            <p class="panel-kicker">Library</p>
-            <h2>My songs</h2>
-          </div>
-          <p class="panel-copy">Load, update, and delete saved drafts.</p>
-        </div>
-
-        <div id="songsList" class="songs-list">
-          <p class="empty-copy">Loading songs...</p>
-        </div>
+        </details>
       </aside>
     </main>
   </div>
