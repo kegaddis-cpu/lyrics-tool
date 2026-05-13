@@ -63,6 +63,19 @@
           ></textarea>
         </div>
 
+        <div class="tool-row">
+          <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
+          <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
+        </div>
+
+        <div id="toolResults" class="tool-results" hidden>
+          <div class="tool-results-head">
+            <h3 id="toolResultsTitle">Writing tools</h3>
+            <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
+          </div>
+          <div id="toolResultsBody" class="tool-results-body"></div>
+        </div>
+
         <div class="action-row">
           <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
           <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
@@ -138,11 +151,17 @@
     const analyzeBtn = document.getElementById("analyzeBtn");
     const saveSongBtn = document.getElementById("saveSongBtn");
     const newSongBtn = document.getElementById("newSongBtn");
+    const rhymingBtn = document.getElementById("rhymingBtn");
+    const randomBtn = document.getElementById("randomBtn");
     const analysisResults = document.getElementById("analysisResults");
     const songsList = document.getElementById("songsList");
     const saveStatus = document.getElementById("saveStatus");
     const libraryDrawer = document.getElementById("libraryDrawer");
     const analysisDrawer = document.getElementById("analysisDrawer");
+    const toolResults = document.getElementById("toolResults");
+    const toolResultsTitle = document.getElementById("toolResultsTitle");
+    const toolResultsBody = document.getElementById("toolResultsBody");
+    const closeToolResultsBtn = document.getElementById("closeToolResultsBtn");
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (match) {
@@ -172,6 +191,35 @@
       targetDrawer.setAttribute("open", "open");
     }
 
+    function showToolResults(title, html) {
+      toolResultsTitle.textContent = title;
+      toolResultsBody.innerHTML = html;
+      toolResults.hidden = false;
+    }
+
+    function hideToolResults() {
+      toolResults.hidden = true;
+      toolResultsTitle.textContent = "Writing tools";
+      toolResultsBody.innerHTML = "";
+    }
+
+    function getLastWord() {
+      const text = lyricsInput.value.trim();
+      if (!text) return "";
+      const words = text.match(/[A-Za-z']+/g);
+      return words && words.length ? words[words.length - 1].toLowerCase() : "";
+    }
+
+    function insertAtCursor(text) {
+      const start = lyricsInput.selectionStart;
+      const end = lyricsInput.selectionEnd;
+      const current = lyricsInput.value;
+      lyricsInput.value = current.slice(0, start) + text + current.slice(end);
+      const cursor = start + text.length;
+      lyricsInput.focus();
+      lyricsInput.setSelectionRange(cursor, cursor);
+    }
+
     libraryDrawer.addEventListener("toggle", () => {
       if (libraryDrawer.open) openOnlyDrawer(libraryDrawer);
     });
@@ -179,6 +227,8 @@
     analysisDrawer.addEventListener("toggle", () => {
       if (analysisDrawer.open) openOnlyDrawer(analysisDrawer);
     });
+
+    closeToolResultsBtn.addEventListener("click", hideToolResults);
 
     async function loadSongs() {
       songsList.innerHTML = '<p class="empty-copy">Loading songs...</p>';
@@ -307,6 +357,7 @@
           lyricsInput.value = "";
           isPublic.checked = false;
           analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
+          hideToolResults();
         }
 
         setStatus("Song deleted.");
@@ -322,6 +373,7 @@
       lyricsInput.value = "";
       isPublic.checked = false;
       analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
+      hideToolResults();
       setStatus("Ready for a new song.");
     }
 
@@ -379,13 +431,101 @@
       }
     }
 
+    function showRhymes() {
+      const lastWord = getLastWord();
+
+      if (!lastWord) {
+        showToolResults(
+          "Rhyming ideas",
+          `<p class="empty-copy">Type a line first, then use Rhyming to get ideas from the last word in your draft.</p>`
+        );
+        return;
+      }
+
+      const rhymeMap = {
+        time: ["rhyme", "climb", "chime", "prime", "shine", "sign"],
+        night: ["light", "bright", "flight", "height", "sight", "write"],
+        fire: ["desire", "higher", "choir", "wire", "inspire"],
+        heart: ["start", "part", "art", "chart", "dark"],
+        pain: ["rain", "chain", "flame", "vein", "gain"],
+        love: ["above", "glove", "dove", "of"],
+        dream: ["beam", "scheme", "gleam", "stream", "theme"],
+        blue: ["true", "through", "you", "view", "do"],
+        road: ["code", "glowed", "showed", "owed", "mode"],
+        song: ["long", "strong", "wrong", "along", "belong"]
+      };
+
+      const suggestions = rhymeMap[lastWord] || [
+        `${lastWord} light`,
+        `${lastWord} fire`,
+        `${lastWord} again`,
+        `${lastWord} tonight`,
+        `${lastWord} inside`
+      ];
+
+      showToolResults(
+        `Rhyming ideas for "${lastWord}"`,
+        `
+          <div class="tool-chip-list">
+            ${suggestions.map((word) => `
+              <button type="button" class="chip-btn" onclick="insertToolWord('${escapeHtml(word)}')">${escapeHtml(word)}</button>
+            `).join("")}
+          </div>
+        `
+      );
+    }
+
+    function showRandomIdeas() {
+      const prompts = [
+        "Write one line that sounds like a confession.",
+        "Flip the point of view from I to you.",
+        "Add a weather image to the next bar.",
+        "Rewrite the last line with fewer words.",
+        "Use a concrete object instead of an emotion word.",
+        "Make the next line feel like a late-night drive.",
+        "Turn the next bar into a question.",
+        "Add one line that raises the tension."
+      ];
+
+      const words = [
+        "neon", "ashes", "velvet", "hollow", "fever", "midnight", "shadow", "mercy"
+      ];
+
+      const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+      const randomWords = [...words].sort(() => 0.5 - Math.random()).slice(0, 4);
+
+      showToolResults(
+        "Random writing prompts",
+        `
+          <div class="analysis-card">
+            <h3>Prompt</h3>
+            <p>${escapeHtml(randomPrompt)}</p>
+          </div>
+
+          <div class="analysis-card">
+            <h3>Word bank</h3>
+            <div class="tool-chip-list">
+              ${randomWords.map((word) => `
+                <button type="button" class="chip-btn" onclick="insertToolWord('${escapeHtml(word)}')">${escapeHtml(word)}</button>
+              `).join("")}
+            </div>
+          </div>
+        `
+      );
+    }
+
     analyzeBtn.addEventListener("click", analyzeLyrics);
     saveSongBtn.addEventListener("click", saveSong);
     newSongBtn.addEventListener("click", resetEditor);
+    rhymingBtn.addEventListener("click", showRhymes);
+    randomBtn.addEventListener("click", showRandomIdeas);
 
     loadSongs();
     window.openSong = openSong;
     window.deleteSong = deleteSong;
+    window.insertToolWord = function (word) {
+      insertAtCursor(`${word} `);
+    };
   </script>
 </body>
 </html>
