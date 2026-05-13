@@ -3,9 +3,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=1440, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=7" />
+  <link rel="stylesheet" href="/style.css?v=8" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -37,7 +37,7 @@
                 <p class="panel-kicker">Editor</p>
                 <h2>Write and save</h2>
               </div>
-              <p class="panel-copy">The side panel stays collapsed until you click a tab, and the divider remains visible inside the desktop workspace.</p>
+              <p class="panel-copy">The side panel stays collapsed until you click a tab, and the layout now fits within the screen instead of forcing an oversized desktop canvas.</p>
             </div>
 
             <div class="meta-row">
@@ -242,9 +242,9 @@
   <script>
     let currentSongId = null;
 
-    const DEFAULT_PANEL_WIDTH = 380;
-    const MIN_PANEL_WIDTH = 280;
-    const MAX_PANEL_WIDTH = 620;
+    const DEFAULT_PANEL_WIDTH = 340;
+    const MIN_PANEL_WIDTH = 260;
+    const MAX_PANEL_WIDTH = 520;
     const RAIL_WIDTH = 64;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
