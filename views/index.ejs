@@ -24,14 +24,18 @@
       </div>
     </header>
 
-    <main class="workspace-layout">
+    <main
+      class="workspace-layout is-collapsed"
+      id="workspaceLayout"
+      style="--panel-width: 0px;"
+    >
       <section class="panel panel-editor">
         <div class="panel-header">
           <div>
             <p class="panel-kicker">Editor</p>
             <h2>Write and save</h2>
           </div>
-          <p class="panel-copy">Desktop-only layout for now so the editor and right-side panel can be validated first.</p>
+          <p class="panel-copy">The side panel stays collapsed until you click a tab, and you can drag the divider to resize the editor.</p>
         </div>
 
         <div class="meta-row">
@@ -72,16 +76,27 @@
         <p id="saveStatus" class="status-line"></p>
       </section>
 
-      <aside class="side-panel panel" aria-label="Workspace tools">
-        <div class="side-panel-tabs" role="tablist" aria-label="Workspace sections">
+      <div
+        id="panelResizeHandle"
+        class="panel-resizer"
+        role="separator"
+        aria-label="Resize side panel"
+        aria-orientation="vertical"
+      >
+        <span class="panel-resizer-grip"></span>
+      </div>
+
+      <aside class="side-shell">
+        <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
           <button
             id="tab-library"
-            class="side-tab is-active"
+            class="side-tab"
             type="button"
             role="tab"
-            aria-selected="true"
+            aria-selected="false"
             aria-controls="panel-library"
             data-panel="library"
+            tabindex="0"
           >
             <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -135,85 +150,103 @@
           </button>
         </div>
 
-        <div class="side-panel-body">
-          <section
-            id="panel-library"
-            class="side-panel-view is-active"
-            role="tabpanel"
-            aria-labelledby="tab-library"
-          >
-            <div class="drawer-panel-header">
-              <div>
-                <p class="panel-kicker">Library</p>
-                <h2>My songs</h2>
-              </div>
-            </div>
-            <p class="drawer-copy">Load, update, and remove saved songs.</p>
-            <div id="songsList" class="songs-list">
-              <p class="empty-copy">Loading songs...</p>
-            </div>
-          </section>
+        <aside class="side-panel panel" id="sidePanel" aria-label="Workspace tools">
+          <div class="side-panel-topbar">
+            <p id="activePanelLabel" class="side-panel-label">Workspace panel</p>
+            <button id="collapsePanelBtn" type="button" class="ghost-btn small-btn">Collapse</button>
+          </div>
 
-          <section
-            id="panel-analysis"
-            class="side-panel-view"
-            role="tabpanel"
-            aria-labelledby="tab-analysis"
-            hidden
-          >
-            <div class="drawer-panel-header">
-              <div>
-                <p class="panel-kicker">Analysis</p>
-                <h2>Song insights</h2>
-              </div>
-            </div>
-            <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
-            <div id="analysisResults" class="analysis-results">
-              <p class="empty-copy">No analysis yet.</p>
-            </div>
-          </section>
-
-          <section
-            id="panel-tools"
-            class="side-panel-view"
-            role="tabpanel"
-            aria-labelledby="tab-tools"
-            hidden
-          >
-            <div class="drawer-panel-header">
-              <div>
-                <p class="panel-kicker">Tools</p>
-                <h2>Writing tools</h2>
-              </div>
-            </div>
-            <p class="drawer-copy">Generate rhymes and random prompts without crowding the editor.</p>
-
-            <div class="tools-panel-body">
-              <div class="tool-row tool-row-drawer">
-                <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
-                <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
-              </div>
-
-              <div id="toolResults" class="tool-results" hidden>
-                <div class="tool-results-head">
-                  <h3 id="toolResultsTitle">Writing tools</h3>
-                  <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
+          <div class="side-panel-body">
+            <section
+              id="panel-library"
+              class="side-panel-view"
+              role="tabpanel"
+              aria-labelledby="tab-library"
+              hidden
+            >
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Library</p>
+                  <h2>My songs</h2>
                 </div>
-                <div id="toolResultsBody" class="tool-results-body"></div>
               </div>
+              <p class="drawer-copy">Load, update, and remove saved songs.</p>
+              <div id="songsList" class="songs-list">
+                <p class="empty-copy">Loading songs...</p>
+              </div>
+            </section>
 
-              <div id="toolEmptyState" class="tool-empty-state">
-                <p class="empty-copy">Use Rhyming to get word ideas from your current line, or Random to spark a new phrase.</p>
+            <section
+              id="panel-analysis"
+              class="side-panel-view"
+              role="tabpanel"
+              aria-labelledby="tab-analysis"
+              hidden
+            >
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Analysis</p>
+                  <h2>Song insights</h2>
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+              <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
+              <div id="analysisResults" class="analysis-results">
+                <p class="empty-copy">No analysis yet.</p>
+              </div>
+            </section>
+
+            <section
+              id="panel-tools"
+              class="side-panel-view"
+              role="tabpanel"
+              aria-labelledby="tab-tools"
+              hidden
+            >
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Tools</p>
+                  <h2>Writing tools</h2>
+                </div>
+              </div>
+              <p class="drawer-copy">Generate rhymes and random prompts without crowding the editor.</p>
+
+              <div class="tools-panel-body">
+                <div class="tool-row tool-row-drawer">
+                  <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
+                  <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
+                </div>
+
+                <div id="toolResults" class="tool-results" hidden>
+                  <div class="tool-results-head">
+                    <h3 id="toolResultsTitle">Writing tools</h3>
+                    <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
+                  </div>
+                  <div id="toolResultsBody" class="tool-results-body"></div>
+                </div>
+
+                <div id="toolEmptyState" class="tool-empty-state">
+                  <p class="empty-copy">Use Rhyming to get word ideas from your current line, or Random to spark a new phrase.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </aside>
       </aside>
     </main>
   </div>
 
   <script>
     let currentSongId = null;
+
+    const DEFAULT_PANEL_WIDTH = 380;
+    const MIN_PANEL_WIDTH = 280;
+    const MAX_PANEL_WIDTH = 620;
+
+    const workspaceLayout = document.getElementById("workspaceLayout");
+    const sidePanel = document.getElementById("sidePanel");
+    const panelResizeHandle = document.getElementById("panelResizeHandle");
+    const collapsePanelBtn = document.getElementById("collapsePanelBtn");
+    const activePanelLabel = document.getElementById("activePanelLabel");
 
     const lyricsInput = document.getElementById("lyricsInput");
     const songTitle = document.getElementById("songTitle");
@@ -257,7 +290,19 @@
       saveStatus.classList.toggle("success", !isError && !!message);
     }
 
-    function activatePanel(panelName, moveFocus = false) {
+    function clampPanelWidth(width) {
+      return Math.max(MIN_PANEL_WIDTH, Math.min(MAX_PANEL_WIDTH, width));
+    }
+
+    function openPanel(panelName, moveFocus = false) {
+      if (workspaceLayout.classList.contains("is-collapsed")) {
+        workspaceLayout.classList.remove("is-collapsed");
+      }
+
+      if (!workspaceLayout.style.getPropertyValue("--panel-width") || workspaceLayout.style.getPropertyValue("--panel-width") === "0px") {
+        workspaceLayout.style.setProperty("--panel-width", `${DEFAULT_PANEL_WIDTH}px`);
+      }
+
       sideTabs.forEach((tab) => {
         const isActive = tab.dataset.panel === panelName;
         tab.classList.toggle("is-active", isActive);
@@ -271,6 +316,41 @@
         panel.classList.toggle("is-active", isActive);
         panel.hidden = !isActive;
       });
+
+      activePanelLabel.textContent = `${panelName.charAt(0).toUpperCase()}${panelName.slice(1)} panel`;
+    }
+
+    function collapsePanel() {
+      workspaceLayout.classList.add("is-collapsed");
+      workspaceLayout.style.setProperty("--panel-width", "0px");
+
+      sideTabs.forEach((tab, index) => {
+        tab.classList.remove("is-active");
+        tab.setAttribute("aria-selected", "false");
+        tab.tabIndex = index === 0 ? 0 : -1;
+      });
+
+      Object.values(sidePanels).forEach((panel) => {
+        panel.classList.remove("is-active");
+        panel.hidden = true;
+      });
+
+      activePanelLabel.textContent = "Workspace panel";
+    }
+
+    function togglePanel(panelName) {
+      const tab = sideTabs.find((item) => item.dataset.panel === panelName);
+      const alreadyOpen =
+        !workspaceLayout.classList.contains("is-collapsed") &&
+        tab &&
+        tab.classList.contains("is-active");
+
+      if (alreadyOpen) {
+        collapsePanel();
+        return;
+      }
+
+      openPanel(panelName);
     }
 
     function showToolResults(title, html) {
@@ -278,7 +358,7 @@
       toolResultsBody.innerHTML = html;
       toolResults.hidden = false;
       toolEmptyState.hidden = true;
-      activatePanel("tools");
+      openPanel("tools");
     }
 
     function hideToolResults() {
@@ -376,7 +456,7 @@
 
     sideTabs.forEach((tab, index) => {
       tab.addEventListener("click", () => {
-        activatePanel(tab.dataset.panel);
+        togglePanel(tab.dataset.panel);
       });
 
       tab.addEventListener("keydown", (event) => {
@@ -390,16 +470,46 @@
           nextIndex = 0;
         } else if (event.key === "End") {
           nextIndex = sideTabs.length - 1;
+        } else if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          togglePanel(tab.dataset.panel);
+          return;
         } else {
           return;
         }
 
         event.preventDefault();
-        activatePanel(sideTabs[nextIndex].dataset.panel, true);
+        sideTabs[nextIndex].focus();
       });
     });
 
+    collapsePanelBtn.addEventListener("click", collapsePanel);
     closeToolResultsBtn.addEventListener("click", hideToolResults);
+
+    let isResizing = false;
+
+    panelResizeHandle.addEventListener("mousedown", (event) => {
+      if (workspaceLayout.classList.contains("is-collapsed")) return;
+
+      isResizing = true;
+      document.body.classList.add("is-resizing");
+      event.preventDefault();
+    });
+
+    window.addEventListener("mousemove", (event) => {
+      if (!isResizing) return;
+
+      const layoutRect = workspaceLayout.getBoundingClientRect();
+      const railWidth = 64;
+      const nextWidth = clampPanelWidth(layoutRect.right - event.clientX - railWidth);
+      workspaceLayout.style.setProperty("--panel-width", `${nextWidth}px`);
+    });
+
+    window.addEventListener("mouseup", () => {
+      if (!isResizing) return;
+      isResizing = false;
+      document.body.classList.remove("is-resizing");
+    });
 
     async function loadSongs() {
       songsList.innerHTML = '<p class="empty-copy">Loading songs...</p>';
@@ -456,7 +566,7 @@
         isPublic.checked = !!data.song.is_public;
 
         setStatus(`Loaded "${data.song.title}".`);
-        activatePanel("library");
+        openPanel("library");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         setStatus("Could not load song.", true);
@@ -596,7 +706,7 @@
           </div>
         `;
 
-        activatePanel("analysis");
+        openPanel("analysis");
       } catch (error) {
         analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
       }
@@ -678,6 +788,8 @@
     randomBtn.addEventListener("click", showRandomIdeas);
 
     loadSongs();
+    collapsePanel();
+
     window.openSong = openSong;
     window.deleteSong = deleteSong;
     window.insertToolWord = function (word) {
