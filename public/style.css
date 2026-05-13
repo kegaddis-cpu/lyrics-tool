@@ -706,4 +706,36 @@ textarea:focus {
   font-size: 0.92rem;
 }
 
+.tool-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tool-section-label {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.tool-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.tool-action-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.tool-action-btn.secondary-btn,
+.tool-action-btn.primary-btn,
+.tool-action-btn.accent-btn {
+  border: 1px solid transparent;
+}
+
 /* === END: public/style.css === */
