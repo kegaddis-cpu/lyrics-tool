@@ -87,16 +87,24 @@ function parseSections(lines) {
 
   function pushSection() {
     const content = currentLines.join("\n").trim();
-    if (!content) { currentLines = []; return; }
+    if (!content) {
+      currentLines = [];
+      return;
+    }
     sections.push({ id: String(idCounter++), label: currentLabel, content });
     currentLines = [];
   }
 
   for (const line of lines) {
     const label = normalizeSectionLabel(line);
-    if (label) { pushSection(); currentLabel = label; }
-    else currentLines.push(line);
+    if (label) {
+      pushSection();
+      currentLabel = label;
+    } else {
+      currentLines.push(line);
+    }
   }
+
   pushSection();
   return sections;
 }
@@ -118,28 +126,36 @@ app.get("/register", (req, res) => {
 
 app.post("/register", async (req, res, next) => {
   const { username, email, password, confirmPassword } = req.body;
+
   if (!username || !email || !password) {
     return res.status(400).render("register", { error: "All fields are required." });
   }
+
   if (password !== confirmPassword) {
     return res.status(400).render("register", { error: "Passwords do not match." });
   }
+
   if (password.length < 8) {
     return res.status(400).render("register", { error: "Password must be at least 8 characters." });
   }
+
   try {
     const [existing] = await db.query(
       "SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1",
       [username, email]
     );
+
     if (existing.length > 0) {
       return res.status(400).render("register", { error: "Username or email is already taken." });
     }
+
     const passwordHash = await bcrypt.hash(password, 12);
+
     await db.query(
       "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
       [username, email, passwordHash]
     );
+
     return res.redirect("/login?registered=1");
   } catch (err) {
     console.error("Register error:", err);
@@ -155,25 +171,42 @@ app.get("/login", (req, res) => {
 
 app.post("/login", async (req, res, next) => {
   const { username, password } = req.body;
+
   if (!username || !password) {
-    return res.status(400).render("login", { error: "Username and password are required.", registered: false });
+    return res.status(400).render("login", {
+      error: "Username and password are required.",
+      registered: false
+    });
   }
+
   try {
     const [rows] = await db.query(
       "SELECT id, username, password_hash FROM users WHERE username = ? LIMIT 1",
       [username]
     );
+
     if (rows.length === 0) {
-      return res.status(401).render("login", { error: "Invalid username or password.", registered: false });
+      return res.status(401).render("login", {
+        error: "Invalid username or password.",
+        registered: false
+      });
     }
+
     const user = rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
+
     if (!match) {
-      return res.status(401).render("login", { error: "Invalid username or password.", registered: false });
+      return res.status(401).render("login", {
+        error: "Invalid username or password.",
+        registered: false
+      });
     }
+
     req.session.regenerate((err) => {
       if (err) return next(err);
+
       req.session.user = { id: user.id, username: user.username };
+
       req.session.save((saveErr) => {
         if (saveErr) return next(saveErr);
         return res.redirect("/");
@@ -187,6 +220,7 @@ app.post("/login", async (req, res, next) => {
 
 app.post("/logout", (req, res, next) => {
   if (!req.session) return res.redirect("/login");
+
   req.session.destroy((err) => {
     if (err) return next(err);
     res.clearCookie("lyrics.sid");
@@ -198,6 +232,129 @@ app.post("/logout", (req, res, next) => {
 
 app.get("/", requireAuth, (req, res) => {
   res.render("index", { username: req.session.user.username });
+});
+
+// --- Song routes ---
+
+app.get("/api/songs", requireAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, is_public, created_at, updated_at
+       FROM songs
+       WHERE user_id = ?
+       ORDER BY updated_at DESC, created_at DESC`,
+      [req.session.user.id]
+    );
+
+    return res.json({ songs: rows });
+  } catch (err) {
+    console.error("List songs error:", err);
+    return res.status(500).json({ error: "Failed to load songs." });
+  }
+});
+
+app.get("/api/songs/:id", requireAuth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, lyrics, is_public, created_at, updated_at
+       FROM songs
+       WHERE id = ? AND user_id = ?
+       LIMIT 1`,
+      [req.params.id, req.session.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    return res.json({ song: rows[0] });
+  } catch (err) {
+    console.error("Get song error:", err);
+    return res.status(500).json({ error: "Failed to load song." });
+  }
+});
+
+app.post("/api/songs", requireAuth, async (req, res) => {
+  const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
+  const isPublic = req.body.is_public ? 1 : 0;
+
+  if (!title) {
+    return res.status(400).json({ error: "Title is required." });
+  }
+
+  try {
+    const [result] = await db.query(
+      `INSERT INTO songs (user_id, title, lyrics, is_public)
+       VALUES (?, ?, ?, ?)`,
+      [req.session.user.id, title, lyrics, isPublic]
+    );
+
+    req.session.draftLyrics = lyrics;
+
+    return res.json({
+      success: true,
+      songId: result.insertId,
+      message: "Song saved."
+    });
+  } catch (err) {
+    console.error("Create song error:", err);
+    return res.status(500).json({ error: "Failed to save song." });
+  }
+});
+
+app.put("/api/songs/:id", requireAuth, async (req, res) => {
+  const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
+  const isPublic = req.body.is_public ? 1 : 0;
+
+  if (!title) {
+    return res.status(400).json({ error: "Title is required." });
+  }
+
+  try {
+    const [result] = await db.query(
+      `UPDATE songs
+       SET title = ?, lyrics = ?, is_public = ?
+       WHERE id = ? AND user_id = ?`,
+      [title, lyrics, isPublic, req.params.id, req.session.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    req.session.draftLyrics = lyrics;
+
+    return res.json({
+      success: true,
+      message: "Song updated."
+    });
+  } catch (err) {
+    console.error("Update song error:", err);
+    return res.status(500).json({ error: "Failed to update song." });
+  }
+});
+
+app.delete("/api/songs/:id", requireAuth, async (req, res) => {
+  try {
+    const [result] = await db.query(
+      "DELETE FROM songs WHERE id = ? AND user_id = ?",
+      [req.params.id, req.session.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Song deleted."
+    });
+  } catch (err) {
+    console.error("Delete song error:", err);
+    return res.status(500).json({ error: "Failed to delete song." });
+  }
 });
 
 // --- Draft routes ---
@@ -222,6 +379,7 @@ app.delete("/api/draft", requireAuth, (req, res) => {
 app.post("/api/analyze", requireAuth, (req, res) => {
   const lyrics = req.body.lyrics || "";
   req.session.draftLyrics = lyrics;
+
   const rawLines = lyrics.split("\n");
   const nonEmptyLines = rawLines.filter((line) => line.trim() !== "");
   const detectedSections = detectSections(rawLines);
@@ -229,6 +387,7 @@ app.post("/api/analyze", requireAuth, (req, res) => {
   const totalWords = countWords(lyrics);
   const avgWords =
     nonEmptyLines.length > 0 ? (totalWords / nonEmptyLines.length).toFixed(1) : "0";
+
   res.json({
     lineCount: nonEmptyLines.length,
     wordCount: totalWords,
@@ -245,15 +404,22 @@ app.post("/api/analyze", requireAuth, (req, res) => {
 app.get("/api/word-tools/rhymes", requireAuth, (req, res) => {
   const word = (req.query.word || "").toString().trim();
   if (!word) return res.json({ word: "", results: [] });
+
   const fallbackRhymes = [
-    `${word} time`, `${word} light`, `${word} fire`, `${word} sky`, `${word} way`
+    `${word} time`,
+    `${word} light`,
+    `${word} fire`,
+    `${word} sky`,
+    `${word} way`
   ];
+
   return res.json({ word, results: fallbackRhymes });
 });
 
 app.get("/api/word-tools/syllables", requireAuth, (req, res) => {
   const text = (req.query.word || "").toString().trim();
   if (!text) return res.json({ text: "", syllables: 0 });
+
   const parts = text.toLowerCase().match(/[aeiouy]+/g);
   const syllables = parts ? parts.length : 1;
   return res.json({ text, syllables });
@@ -262,6 +428,7 @@ app.get("/api/word-tools/syllables", requireAuth, (req, res) => {
 app.get("/api/word-tools/random", requireAuth, (req, res) => {
   const topic = (req.query.topic || "").toString().trim();
   const mode = (req.query.mode || "word").toString();
+
   const randomWords = ["midnight", "echo", "shadow", "ember", "velvet"];
   const randomPhrases = [
     "running through the silence",
@@ -270,6 +437,7 @@ app.get("/api/word-tools/random", requireAuth, (req, res) => {
     "dancing with the static",
     "fire underneath the rain"
   ];
+
   const pool = mode === "phrase" ? randomPhrases : randomWords;
   const result = pool[Math.floor(Math.random() * pool.length)];
   return res.json({ mode, topic, result });
