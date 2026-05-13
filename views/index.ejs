@@ -1,3 +1,4 @@
+<!-- === START: views/index.ejs === -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,155 +8,288 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main class="app">
-    <header class="app-header">
-      <div class="app-header-top">
-        <div>
-          <h1>Lyrics Helper</h1>
-          <p class="app-subtitle">
-            Write, organize, and analyze your lyrics in one place.
-          </p>
-        </div>
-
-        <div class="desktop-header-actions">
-          <form action="/logout" method="POST" class="logout-form">
-            <button type="submit" class="secondary-btn">Logout</button>
-          </form>
-        </div>
-
-        <button
-          id="mobile-menu-toggle"
-          class="mobile-menu-toggle"
-          type="button"
-          aria-expanded="false"
-          aria-controls="mobile-header-menu"
-          aria-label="Open menu"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
-
-      <div id="mobile-header-menu" class="mobile-header-menu hidden">
-        <form action="/logout" method="POST" class="mobile-menu-form">
-          <button type="submit" class="secondary-btn mobile-menu-button">Logout</button>
-        </form>
-      </div>
-    </header>
-
-    <div class="tool-panel">
-      <section class="input-column">
-        <form id="lyrics-form">
-          <label for="lyrics-input">Lyrics</label>
-
-          <div class="label-toolbar">
-            <button type="button" class="label-btn" data-label="[Verse]">Verse</button>
-            <button type="button" class="label-btn" data-label="[Chorus]">Chorus</button>
-            <button type="button" class="label-btn" data-label="[Bridge]">Bridge</button>
-            <button type="button" class="label-btn" data-label="[Outro]">Outro</button>
-          </div>
-
-          <textarea
-            id="lyrics-input"
-            name="lyrics"
-            placeholder="Write or paste your lyrics here..."
-          ></textarea>
-
-          <div class="button-row">
-            <button type="submit">Analyze</button>
-            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
-          </div>
-        </form>
-      </section>
-
-      <aside class="sidebar-column">
-        <section class="results-panel">
-          <div class="word-tools-box">
-            <h2>Word Tools</h2>
-            <p class="word-tools-help">
-              Select a word in the lyrics or type one below.
-            </p>
-
-            <p id="selected-word-preview" class="selected-word-preview">
-              No word or phrase selected in lyrics yet.
-            </p>
-
-            <div class="word-tools-controls">
-              <input
-                type="text"
-                id="word-tools-input"
-                placeholder="Enter a word or phrase"
-              />
-
-              <select id="random-mode-select">
-                <option value="word">Random word</option>
-                <option value="phrase">Random phrase</option>
-              </select>
-
-              <button type="button" id="get-selected-rhymes-btn">Rhymes for Selected</button>
-              <button type="button" id="get-rhymes-btn">Get Rhymes</button>
-              <button type="button" id="get-syllables-btn">Count Syllables</button>
-              <button type="button" id="get-random-btn">Get Random</button>
-            </div>
-
-            <p id="word-tools-status" class="word-tools-status">
-              Try a rhyme, syllable count, or random prompt.
-            </p>
-
-            <div id="word-tools-results" class="word-tools-results"></div>
-          </div>
-        </section>
-
-        <section class="sections-panel">
-          <h2>Analysis</h2>
-          <p id="status-message">Enter some lyrics and click Analyze.</p>
-
-          <div class="stats-grid">
-            <div class="stat-card">
-              <h3>Lines</h3>
-              <p id="line-count">0</p>
-            </div>
-
-            <div class="stat-card">
-              <h3>Words</h3>
-              <p id="word-count">0</p>
-            </div>
-
-            <div class="stat-card">
-              <h3>Average Words / Line</h3>
-              <p id="average-words-per-line">0</p>
-            </div>
-
-            <div class="stat-card">
-              <h3>Sections</h3>
-              <p id="section-count">0</p>
-            </div>
-          </div>
-
-          <div class="detail-box">
-            <h3>Detected Sections</h3>
-            <p id="sections-empty">No sections detected yet.</p>
-            <ul id="sections-list"></ul>
-          </div>
-
-          <div class="detail-box">
-            <h3>Longest Line</h3>
-            <p id="longest-line-text">Nothing analyzed yet.</p>
-          </div>
-
-          <div class="detail-box">
-            <h3>Parsed Sections</h3>
-            <p id="sections-panel-message">
-              Analyze your lyrics to turn detected sections into draggable cards.
-            </p>
-            <div id="parsed-sections-list" class="parsed-sections-list"></div>
-          </div>
-        </section>
-      </aside>
+  <header class="site-header">
+    <div>
+      <h1>Lyrics Helper</h1>
+      <p class="welcome-text">Welcome, <%= username %></p>
     </div>
+
+    <form action="/logout" method="POST">
+      <button type="submit" class="secondary-button">Log Out</button>
+    </form>
+  </header>
+
+  <main class="app-shell">
+    <section class="editor-panel">
+      <div class="panel-heading">
+        <h2>Write</h2>
+        <p>Draft, analyze, and save your songs.</p>
+      </div>
+
+      <div class="song-meta-row">
+        <input type="text" id="songTitle" placeholder="Song title" maxlength="255" />
+        <label class="checkbox-row">
+          <input type="checkbox" id="isPublic" />
+          <span>Public</span>
+        </label>
+      </div>
+
+      <textarea
+        id="lyricsInput"
+        placeholder="Write your lyrics here..."
+        rows="18"
+      ></textarea>
+
+      <div class="button-row">
+        <button id="analyzeBtn">Analyze</button>
+        <button id="saveSongBtn" class="secondary-button">Save Song</button>
+        <button id="newSongBtn" class="secondary-button">New Song</button>
+      </div>
+
+      <p id="saveStatus" class="save-status"></p>
+
+      <section class="results-panel">
+        <h2>Analysis</h2>
+        <div id="analysisResults">
+          <p>No analysis yet.</p>
+        </div>
+      </section>
+    </section>
+
+    <aside class="songs-panel">
+      <div class="panel-heading">
+        <h2>My Songs</h2>
+        <p>Your saved drafts and finished songs.</p>
+      </div>
+
+      <div id="songsList" class="songs-list">
+        <p>Loading songs...</p>
+      </div>
+    </aside>
   </main>
 
-  <script src="/script.js"></script>
+  <script>
+    let currentSongId = null;
+
+    const lyricsInput = document.getElementById("lyricsInput");
+    const songTitle = document.getElementById("songTitle");
+    const isPublic = document.getElementById("isPublic");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const saveSongBtn = document.getElementById("saveSongBtn");
+    const newSongBtn = document.getElementById("newSongBtn");
+    const analysisResults = document.getElementById("analysisResults");
+    const songsList = document.getElementById("songsList");
+    const saveStatus = document.getElementById("saveStatus");
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>"']/g, function (match) {
+        const map = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        };
+        return map[match];
+      });
+    }
+
+    function setStatus(message, isError = false) {
+      saveStatus.textContent = message;
+      saveStatus.classList.toggle("error-text", isError);
+    }
+
+    async function loadSongs() {
+      songsList.innerHTML = "<p>Loading songs...</p>";
+
+      try {
+        const response = await fetch("/api/songs");
+        const data = await response.json();
+
+        if (!response.ok) {
+          songsList.innerHTML = "<p>Could not load songs.</p>";
+          return;
+        }
+
+        if (!data.songs.length) {
+          songsList.innerHTML = "<p>No songs saved yet.</p>";
+          return;
+        }
+
+        songsList.innerHTML = data.songs.map((song) => `
+          <article class="song-card">
+            <div class="song-card-top">
+              <div>
+                <h3>${escapeHtml(song.title)}</h3>
+                <p>${song.is_public ? "Public" : "Private"}</p>
+              </div>
+            </div>
+            <div class="song-card-actions">
+              <button type="button" onclick="openSong(${song.id})">Load</button>
+              <button type="button" class="secondary-button" onclick="deleteSong(${song.id})">Delete</button>
+            </div>
+          </article>
+        `).join("");
+      } catch (error) {
+        console.error("Load songs error:", error);
+        songsList.innerHTML = "<p>Could not load songs.</p>";
+      }
+    }
+
+    async function openSong(songId) {
+      try {
+        const response = await fetch(`/api/songs/${songId}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          setStatus(data.error || "Could not load song.", true);
+          return;
+        }
+
+        currentSongId = data.song.id;
+        songTitle.value = data.song.title || "";
+        lyricsInput.value = data.song.lyrics || "";
+        isPublic.checked = !!data.song.is_public;
+
+        setStatus(`Loaded "${data.song.title}".`);
+      } catch (error) {
+        console.error("Open song error:", error);
+        setStatus("Could not load song.", true);
+      }
+    }
+
+    async function saveSong() {
+      const title = songTitle.value.trim();
+      const lyrics = lyricsInput.value;
+      const publicValue = isPublic.checked;
+
+      if (!title) {
+        setStatus("Please enter a song title.", true);
+        songTitle.focus();
+        return;
+      }
+
+      try {
+        const url = currentSongId ? `/api/songs/${currentSongId}` : "/api/songs";
+        const method = currentSongId ? "PUT" : "POST";
+
+        const response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title,
+            lyrics,
+            is_public: publicValue
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setStatus(data.error || "Could not save song.", true);
+          return;
+        }
+
+        if (data.songId) {
+          currentSongId = data.songId;
+        }
+
+        setStatus(data.message || "Song saved.");
+        await loadSongs();
+      } catch (error) {
+        console.error("Save song error:", error);
+        setStatus("Could not save song.", true);
+      }
+    }
+
+    async function deleteSong(songId) {
+      const confirmed = window.confirm("Delete this song?");
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch(`/api/songs/${songId}`, {
+          method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setStatus(data.error || "Could not delete song.", true);
+          return;
+        }
+
+        if (currentSongId === songId) {
+          currentSongId = null;
+          songTitle.value = "";
+          lyricsInput.value = "";
+          isPublic.checked = false;
+          analysisResults.innerHTML = "<p>No analysis yet.</p>";
+        }
+
+        setStatus("Song deleted.");
+        await loadSongs();
+      } catch (error) {
+        console.error("Delete song error:", error);
+        setStatus("Could not delete song.", true);
+      }
+    }
+
+    function resetEditor() {
+      currentSongId = null;
+      songTitle.value = "";
+      lyricsInput.value = "";
+      isPublic.checked = false;
+      analysisResults.innerHTML = "<p>No analysis yet.</p>";
+      setStatus("Ready for a new song.");
+    }
+
+    async function analyzeLyrics() {
+      const lyrics = lyricsInput.value;
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lyrics })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          analysisResults.innerHTML = "<p>Could not analyze lyrics.</p>";
+          return;
+        }
+
+        analysisResults.innerHTML = `
+          <div class="stats-grid">
+            <div class="stat-box"><strong>Lines</strong><span>${data.lineCount}</span></div>
+            <div class="stat-box"><strong>Words</strong><span>${data.wordCount}</span></div>
+            <div class="stat-box"><strong>Avg/Line</strong><span>${data.averageWordsPerLine}</span></div>
+            <div class="stat-box"><strong>Sections</strong><span>${data.sectionCount}</span></div>
+          </div>
+          <div class="analysis-block">
+            <h3>Detected Sections</h3>
+            <p>${data.detectedSections.length ? data.detectedSections.join(", ") : "None detected"}</p>
+          </div>
+          <div class="analysis-block">
+            <h3>Longest Line</h3>
+            <p>${data.longestLine ? escapeHtml(data.longestLine) : "None"}</p>
+          </div>
+        `;
+      } catch (error) {
+        console.error("Analyze error:", error);
+        analysisResults.innerHTML = "<p>Could not analyze lyrics.</p>";
+      }
+    }
+
+    analyzeBtn.addEventListener("click", analyzeLyrics);
+    saveSongBtn.addEventListener("click", saveSong);
+    newSongBtn.addEventListener("click", resetEditor);
+
+    loadSongs();
+    window.openSong = openSong;
+    window.deleteSong = deleteSong;
+  </script>
 </body>
 </html>
+<!-- === END: views/index.ejs === -->
