@@ -210,6 +210,16 @@
       return words && words.length ? words[words.length - 1].toLowerCase() : "";
     }
 
+    function getSelectionOrLastWord() {
+      const selected = lyricsInput.value
+        .slice(lyricsInput.selectionStart, lyricsInput.selectionEnd)
+        .trim()
+        .toLowerCase();
+
+      if (selected) return selected;
+      return getLastWord();
+    }
+
     function insertAtCursor(text) {
       const start = lyricsInput.selectionStart;
       const end = lyricsInput.selectionEnd;
@@ -218,6 +228,135 @@
       const cursor = start + text.length;
       lyricsInput.focus();
       lyricsInput.setSelectionRange(cursor, cursor);
+    }
+
+    function normalizeArray(value) {
+      if (Array.isArray(value)) return value.filter(Boolean);
+      if (typeof value === "string" && value.trim()) {
+        return value.split(/[,\n]/).map((item) => item.trim()).filter(Boolean);
+      }
+      return [];
+    }
+
+    function extractRhymeSuggestions(data) {
+      return [
+        ...normalizeArray(data?.rhymes),
+        ...normalizeArray(data?.suggestions),
+        ...normalizeArray(data?.words),
+        ...normalizeArray(data?.results),
+        ...normalizeArray(data?.data)
+      ].slice(0, 16);
+    }
+
+    function extractRandomPayload(data) {
+      const prompts = [
+        ...normalizeArray(data?.prompts),
+        ...normalizeArray(data?.ideas),
+        ...normalizeArray(data?.lines),
+        ...normalizeArray(data?.suggestions)
+      ];
+
+      const words = [
+        ...normalizeArray(data?.words),
+        ...normalizeArray(data?.wordBank),
+        ...normalizeArray(data?.keywords),
+        ...normalizeArray(data?.terms)
+      ];
+
+      return {
+        prompts,
+        words
+      };
+    }
+
+    function renderRhymeResults(sourceWord, suggestions) {
+      if (!suggestions.length) {
+        showToolResults(
+          "Rhyming ideas",
+          `<p class="empty-copy">No rhyme ideas came back for "${escapeHtml(sourceWord)}".</p>`
+        );
+        return;
+      }
+
+      showToolResults(
+        `Rhyming ideas for "${sourceWord}"`,
+        `
+          <div class="tool-chip-list">
+            ${suggestions.map((word) => `
+              <button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(word)})">${escapeHtml(word)}</button>
+            `).join("")}
+          </div>
+        `
+      );
+    }
+
+    function renderRandomResults(prompts, words) {
+      const prompt = prompts[0] || "Try rewriting the last line with a sharper image.";
+      const wordList = words.length ? words.slice(0, 8) : ["neon", "ashes", "midnight", "mercy"];
+
+      showToolResults(
+        "Random writing prompts",
+        `
+          <div class="analysis-card">
+            <h3>Prompt</h3>
+            <p>${escapeHtml(prompt)}</p>
+          </div>
+
+          <div class="analysis-card">
+            <h3>Word bank</h3>
+            <div class="tool-chip-list">
+              ${wordList.map((word) => `
+                <button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(word)})">${escapeHtml(word)}</button>
+              `).join("")}
+            </div>
+          </div>
+        `
+      );
+    }
+
+    function getFallbackRhymes(lastWord) {
+      const rhymeMap = {
+        time: ["rhyme", "climb", "chime", "prime", "shine", "sign"],
+        night: ["light", "bright", "flight", "height", "sight", "write"],
+        fire: ["desire", "higher", "choir", "wire", "inspire"],
+        heart: ["start", "part", "art", "chart", "dark"],
+        pain: ["rain", "chain", "flame", "vein", "gain"],
+        love: ["above", "glove", "dove", "of"],
+        dream: ["beam", "scheme", "gleam", "stream", "theme"],
+        blue: ["true", "through", "you", "view", "do"],
+        road: ["code", "glowed", "showed", "owed", "mode"],
+        song: ["long", "strong", "wrong", "along", "belong"]
+      };
+
+      return rhymeMap[lastWord] || [
+        `${lastWord} light`,
+        `${lastWord} fire`,
+        `${lastWord} again`,
+        `${lastWord} tonight`,
+        `${lastWord} inside`
+      ];
+    }
+
+    function getFallbackRandom() {
+      const prompts = [
+        "Write one line that sounds like a confession.",
+        "Flip the point of view from I to you.",
+        "Add a weather image to the next bar.",
+        "Rewrite the last line with fewer words.",
+        "Use a concrete object instead of an emotion word.",
+        "Make the next line feel like a late-night drive.",
+        "Turn the next bar into a question.",
+        "Add one line that raises the tension."
+      ];
+
+      const words = [
+        "neon", "ashes", "velvet", "hollow", "fever", "midnight", "shadow", "mercy"
+      ];
+
+      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+      const wordBank = [...words].sort(() => 0.5 - Math.random()).slice(0, 4);
+
+      return { prompts: [prompt], words: wordBank };
     }
 
     libraryDrawer.addEventListener("toggle", () => {
@@ -431,87 +570,86 @@
       }
     }
 
-    function showRhymes() {
-      const lastWord = getLastWord();
+    async function showRhymes() {
+      const sourceWord = getSelectionOrLastWord();
 
-      if (!lastWord) {
+      if (!sourceWord) {
         showToolResults(
           "Rhyming ideas",
-          `<p class="empty-copy">Type a line first, then use Rhyming to get ideas from the last word in your draft.</p>`
+          `<p class="empty-copy">Select a word or type a line first, then use Rhyming.</p>`
         );
         return;
       }
 
-      const rhymeMap = {
-        time: ["rhyme", "climb", "chime", "prime", "shine", "sign"],
-        night: ["light", "bright", "flight", "height", "sight", "write"],
-        fire: ["desire", "higher", "choir", "wire", "inspire"],
-        heart: ["start", "part", "art", "chart", "dark"],
-        pain: ["rain", "chain", "flame", "vein", "gain"],
-        love: ["above", "glove", "dove", "of"],
-        dream: ["beam", "scheme", "gleam", "stream", "theme"],
-        blue: ["true", "through", "you", "view", "do"],
-        road: ["code", "glowed", "showed", "owed", "mode"],
-        song: ["long", "strong", "wrong", "along", "belong"]
-      };
-
-      const suggestions = rhymeMap[lastWord] || [
-        `${lastWord} light`,
-        `${lastWord} fire`,
-        `${lastWord} again`,
-        `${lastWord} tonight`,
-        `${lastWord} inside`
-      ];
-
       showToolResults(
-        `Rhyming ideas for "${lastWord}"`,
-        `
-          <div class="tool-chip-list">
-            ${suggestions.map((word) => `
-              <button type="button" class="chip-btn" onclick="insertToolWord('${escapeHtml(word)}')">${escapeHtml(word)}</button>
-            `).join("")}
-          </div>
-        `
+        "Rhyming ideas",
+        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...<\/p>`
       );
+
+      try {
+        const response = await fetch("/api/rhyme", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            word: sourceWord,
+            lyrics: lyricsInput.value,
+            title: songTitle.value.trim()
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.details || data.error || "Could not fetch rhymes.");
+        }
+
+        const suggestions = extractRhymeSuggestions(data);
+
+        if (!suggestions.length) {
+          throw new Error("No rhyme suggestions returned.");
+        }
+
+        renderRhymeResults(sourceWord, suggestions);
+      } catch (error) {
+        renderRhymeResults(sourceWord, getFallbackRhymes(sourceWord));
+        setStatus("Using fallback rhyme ideas.", true);
+      }
     }
 
-    function showRandomIdeas() {
-      const prompts = [
-        "Write one line that sounds like a confession.",
-        "Flip the point of view from I to you.",
-        "Add a weather image to the next bar.",
-        "Rewrite the last line with fewer words.",
-        "Use a concrete object instead of an emotion word.",
-        "Make the next line feel like a late-night drive.",
-        "Turn the next bar into a question.",
-        "Add one line that raises the tension."
-      ];
-
-      const words = [
-        "neon", "ashes", "velvet", "hollow", "fever", "midnight", "shadow", "mercy"
-      ];
-
-      const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-      const randomWords = [...words].sort(() => 0.5 - Math.random()).slice(0, 4);
-
+    async function showRandomIdeas() {
       showToolResults(
         "Random writing prompts",
-        `
-          <div class="analysis-card">
-            <h3>Prompt</h3>
-            <p>${escapeHtml(randomPrompt)}</p>
-          </div>
-
-          <div class="analysis-card">
-            <h3>Word bank</h3>
-            <div class="tool-chip-list">
-              ${randomWords.map((word) => `
-                <button type="button" class="chip-btn" onclick="insertToolWord('${escapeHtml(word)}')">${escapeHtml(word)}</button>
-              `).join("")}
-            </div>
-          </div>
-        `
+        `<p class="empty-copy">Loading random ideas...<\/p>`
       );
+
+      try {
+        const response = await fetch("/api/random", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lyrics: lyricsInput.value,
+            title: songTitle.value.trim()
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.details || data.error || "Could not fetch random ideas.");
+        }
+
+        const payload = extractRandomPayload(data);
+
+        if (!payload.prompts.length && !payload.words.length) {
+          throw new Error("No random ideas returned.");
+        }
+
+        renderRandomResults(payload.prompts, payload.words);
+      } catch (error) {
+        const payload = getFallbackRandom();
+        renderRandomResults(payload.prompts, payload.words);
+        setStatus("Using fallback random ideas.", true);
+      }
     }
 
     analyzeBtn.addEventListener("click", analyzeLyrics);
