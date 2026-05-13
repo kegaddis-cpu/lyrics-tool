@@ -397,12 +397,53 @@
       return getLastWord();
     }
 
-    function insertAtCursor(text) {
+    // Updated insertion logic so rhymes replace words more naturally
+    function insertAtCursor(text, replaceSelection = false) {
       const start = lyricsInput.selectionStart;
       const end = lyricsInput.selectionEnd;
-      const current = lyricsInput.value;
-      lyricsInput.value = current.slice(0, start) + text + current.slice(end);
+      const value = lyricsInput.value;
+
+      if (replaceSelection && start !== end) {
+        lyricsInput.value = value.slice(0, start) + text + value.slice(end);
+        const cursor = start + text.length;
+        lyricsInput.focus();
+        lyricsInput.setSelectionRange(cursor, cursor);
+        return;
+      }
+
+      lyricsInput.value = value.slice(0, start) + text + value.slice(end);
       const cursor = start + text.length;
+      lyricsInput.focus();
+      lyricsInput.setSelectionRange(cursor, cursor);
+    }
+
+    function replaceLastWordInLine(newWord) {
+      const value = lyricsInput.value;
+      const caret = lyricsInput.selectionStart;
+
+      const lineStart = value.lastIndexOf("\n", caret - 1) + 1;
+      const lineEnd = value.indexOf("\n", caret);
+      const effectiveLineEnd = lineEnd === -1 ? value.length : lineEnd;
+      const lineText = value.slice(lineStart, effectiveLineEnd);
+
+      const match = lineText.match(/.*\b([\w']+)\b[^\w']*$/);
+      if (!match) {
+        insertAtCursor(newWord + " ", false);
+        return;
+      }
+
+      const lastWord = match[1];
+      const lastWordIndex = lineText.lastIndexOf(lastWord);
+      const globalWordStart = lineStart + lastWordIndex;
+      const globalWordEnd = globalWordStart + lastWord.length;
+
+      const newValue =
+        value.slice(0, globalWordStart) +
+        newWord +
+        value.slice(globalWordEnd);
+
+      lyricsInput.value = newValue;
+      const cursor = globalWordStart + newWord.length + 1;
       lyricsInput.focus();
       lyricsInput.setSelectionRange(cursor, cursor);
     }
@@ -803,7 +844,11 @@
     window.openSong = openSong;
     window.deleteSong = deleteSong;
     window.insertToolWord = function (word) {
-      insertAtCursor(`${word} `);
+      if (lyricsInput.selectionStart !== lyricsInput.selectionEnd) {
+        insertAtCursor(word + " ", true);
+      } else {
+        replaceLastWordInLine(word);
+      }
     };
   </script>
 </body>
