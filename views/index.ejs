@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="page-shell">
+  <div class="app-shell">
     <header class="topbar">
       <div class="brand-block">
         <p class="eyebrow">Lyrics workspace</p>
@@ -30,50 +30,52 @@
       style="--panel-width: 0px;"
     >
       <section class="panel panel-editor">
-        <div class="panel-header">
-          <div>
-            <p class="panel-kicker">Editor</p>
-            <h2>Write and save</h2>
-          </div>
-          <p class="panel-copy">The side panel stays collapsed until you click a tab, and you can drag the divider to resize the editor.</p>
-        </div>
-
-        <div class="meta-row">
-          <div class="field-group field-grow">
-            <label for="songTitle">Song title</label>
-            <input
-              type="text"
-              id="songTitle"
-              placeholder="Enter a title"
-              maxlength="255"
-            />
+        <div class="editor-scroll">
+          <div class="panel-header">
+            <div>
+              <p class="panel-kicker">Editor</p>
+              <h2>Write and save</h2>
+            </div>
+            <p class="panel-copy">The side panel stays collapsed until you click a tab, and the divider is always visible while the workspace fills the screen.</p>
           </div>
 
-          <label class="toggle-card" for="isPublic">
-            <span class="toggle-copy">
-              <strong>Public</strong>
-              <small>Visible to others later</small>
-            </span>
-            <input type="checkbox" id="isPublic" />
-          </label>
-        </div>
+          <div class="meta-row">
+            <div class="field-group field-grow">
+              <label for="songTitle">Song title</label>
+              <input
+                type="text"
+                id="songTitle"
+                placeholder="Enter a title"
+                maxlength="255"
+              />
+            </div>
 
-        <div class="field-group">
-          <label for="lyricsInput">Lyrics</label>
-          <textarea
-            id="lyricsInput"
-            placeholder="Write your lyrics here..."
-            rows="20"
-          ></textarea>
-        </div>
+            <label class="toggle-card" for="isPublic">
+              <span class="toggle-copy">
+                <strong>Public</strong>
+                <small>Visible to others later</small>
+              </span>
+              <input type="checkbox" id="isPublic" />
+            </label>
+          </div>
 
-        <div class="action-row">
-          <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
-          <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
-          <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
-        </div>
+          <div class="field-group editor-lyrics-group">
+            <label for="lyricsInput">Lyrics</label>
+            <textarea
+              id="lyricsInput"
+              placeholder="Write your lyrics here..."
+              rows="20"
+            ></textarea>
+          </div>
 
-        <p id="saveStatus" class="status-line"></p>
+          <div class="action-row">
+            <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
+            <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
+            <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
+          </div>
+
+          <p id="saveStatus" class="status-line"></p>
+        </div>
       </section>
 
       <div
@@ -86,7 +88,7 @@
         <span class="panel-resizer-grip"></span>
       </div>
 
-      <aside class="side-shell">
+      <div class="side-shell">
         <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
           <button
             id="tab-library"
@@ -231,7 +233,7 @@
             </section>
           </div>
         </aside>
-      </aside>
+      </div>
     </main>
   </div>
 
@@ -241,6 +243,7 @@
     const DEFAULT_PANEL_WIDTH = 380;
     const MIN_PANEL_WIDTH = 280;
     const MAX_PANEL_WIDTH = 620;
+    const RAIL_WIDTH = 64;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
     const sidePanel = document.getElementById("sidePanel");
@@ -299,7 +302,8 @@
         workspaceLayout.classList.remove("is-collapsed");
       }
 
-      if (!workspaceLayout.style.getPropertyValue("--panel-width") || workspaceLayout.style.getPropertyValue("--panel-width") === "0px") {
+      const currentWidth = parseInt(workspaceLayout.style.getPropertyValue("--panel-width"), 10);
+      if (!currentWidth) {
         workspaceLayout.style.setProperty("--panel-width", `${DEFAULT_PANEL_WIDTH}px`);
       }
 
@@ -500,8 +504,7 @@
       if (!isResizing) return;
 
       const layoutRect = workspaceLayout.getBoundingClientRect();
-      const railWidth = 64;
-      const nextWidth = clampPanelWidth(layoutRect.right - event.clientX - railWidth);
+      const nextWidth = clampPanelWidth(layoutRect.right - event.clientX - RAIL_WIDTH);
       workspaceLayout.style.setProperty("--panel-width", `${nextWidth}px`);
     });
 
@@ -567,7 +570,6 @@
 
         setStatus(`Loaded "${data.song.title}".`);
         openPanel("library");
-        window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         setStatus("Could not load song.", true);
       }
