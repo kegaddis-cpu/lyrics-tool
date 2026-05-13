@@ -34,16 +34,12 @@
         </label>
       </div>
 
-      <textarea
-        id="lyricsInput"
-        placeholder="Write your lyrics here..."
-        rows="18"
-      ></textarea>
+      <textarea id="lyricsInput" placeholder="Write your lyrics here..." rows="18"></textarea>
 
       <div class="button-row">
-        <button id="analyzeBtn">Analyze</button>
-        <button id="saveSongBtn" class="secondary-button">Save Song</button>
-        <button id="newSongBtn" class="secondary-button">New Song</button>
+        <button id="analyzeBtn" type="button">Analyze</button>
+        <button id="saveSongBtn" type="button" class="secondary-button">Save Song</button>
+        <button id="newSongBtn" type="button" class="secondary-button">New Song</button>
       </div>
 
       <p id="saveStatus" class="save-status"></p>
@@ -82,7 +78,7 @@
     const saveStatus = document.getElementById("saveStatus");
 
     function escapeHtml(str) {
-      return str.replace(/[&<>"']/g, function (match) {
+      return String(str).replace(/[&<>"']/g, function (match) {
         const map = {
           "&": "&amp;",
           "<": "&lt;",
@@ -107,11 +103,16 @@
         const data = await response.json();
 
         if (!response.ok) {
-          songsList.innerHTML = "<p>Could not load songs.</p>";
+          songsList.innerHTML = `
+            <div class="song-error-box">
+              <p><strong>Could not load songs.</strong></p>
+              <p>${escapeHtml(data.details || data.error || "Unknown error")}</p>
+            </div>
+          `;
           return;
         }
 
-        if (!data.songs.length) {
+        if (!data.songs || !data.songs.length) {
           songsList.innerHTML = "<p>No songs saved yet.</p>";
           return;
         }
@@ -132,7 +133,12 @@
         `).join("");
       } catch (error) {
         console.error("Load songs error:", error);
-        songsList.innerHTML = "<p>Could not load songs.</p>";
+        songsList.innerHTML = `
+          <div class="song-error-box">
+            <p><strong>Could not load songs.</strong></p>
+            <p>${escapeHtml(error.message || "Unknown fetch error")}</p>
+          </div>
+        `;
       }
     }
 
@@ -142,7 +148,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.error || "Could not load song.", true);
+          setStatus(data.details || data.error || "Could not load song.", true);
           return;
         }
 
@@ -186,7 +192,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.error || "Could not save song.", true);
+          setStatus(data.details || data.error || "Could not save song.", true);
           return;
         }
 
@@ -214,7 +220,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.error || "Could not delete song.", true);
+          setStatus(data.details || data.error || "Could not delete song.", true);
           return;
         }
 
@@ -269,7 +275,7 @@
           </div>
           <div class="analysis-block">
             <h3>Detected Sections</h3>
-            <p>${data.detectedSections.length ? data.detectedSections.join(", ") : "None detected"}</p>
+            <p>${data.detectedSections.length ? data.detectedSections.map(escapeHtml).join(", ") : "None detected"}</p>
           </div>
           <div class="analysis-block">
             <h3>Longest Line</h3>
