@@ -31,7 +31,7 @@
             <p class="panel-kicker">Editor</p>
             <h2>Write and save</h2>
           </div>
-          <p class="panel-copy">Keep the writing area wide and move utilities into side drawers.</p>
+          <p class="panel-copy">Keep the writing area wide and move utilities into a single side panel.</p>
         </div>
 
         <div class="meta-row">
@@ -72,20 +72,76 @@
         <p id="saveStatus" class="status-line"></p>
       </section>
 
-      <aside class="drawer-rail" aria-label="Side tools">
-        <details class="drawer" id="libraryDrawer">
-          <summary class="drawer-tab" title="Library">
-            <span class="drawer-tab-icon" aria-hidden="true">
+      <aside class="side-panel panel" aria-label="Workspace tools">
+        <div class="side-panel-tabs" role="tablist" aria-label="Workspace sections">
+          <button
+            id="tab-library"
+            class="side-tab is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-library"
+            data-panel="library"
+          >
+            <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
                 <path d="M8 8h8"></path>
                 <path d="M8 12h8"></path>
               </svg>
             </span>
-            <span class="drawer-tab-text">Library</span>
-          </summary>
+            <span class="side-tab-text">Library</span>
+          </button>
 
-          <div class="drawer-panel">
+          <button
+            id="tab-analysis"
+            class="side-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-analysis"
+            data-panel="analysis"
+            tabindex="-1"
+          >
+            <span class="side-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19h16"></path>
+                <path d="M7 16V9"></path>
+                <path d="M12 16V5"></path>
+                <path d="M17 16v-4"></path>
+              </svg>
+            </span>
+            <span class="side-tab-text">Analysis</span>
+          </button>
+
+          <button
+            id="tab-tools"
+            class="side-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-tools"
+            data-panel="tools"
+            tabindex="-1"
+          >
+            <span class="side-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
+                <path d="M13.5 7.5l3 3"></path>
+                <path d="M5 21h14"></path>
+              </svg>
+            </span>
+            <span class="side-tab-text">Tools</span>
+          </button>
+        </div>
+
+        <div class="side-panel-body">
+          <section
+            id="panel-library"
+            class="side-panel-view is-active"
+            role="tabpanel"
+            aria-labelledby="tab-library"
+          >
             <div class="drawer-panel-header">
               <div>
                 <p class="panel-kicker">Library</p>
@@ -96,23 +152,15 @@
             <div id="songsList" class="songs-list">
               <p class="empty-copy">Loading songs...</p>
             </div>
-          </div>
-        </details>
+          </section>
 
-        <details class="drawer" id="analysisDrawer">
-          <summary class="drawer-tab" title="Analysis">
-            <span class="drawer-tab-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19h16"></path>
-                <path d="M7 16V9"></path>
-                <path d="M12 16V5"></path>
-                <path d="M17 16v-4"></path>
-              </svg>
-            </span>
-            <span class="drawer-tab-text">Analysis</span>
-          </summary>
-
-          <div class="drawer-panel">
+          <section
+            id="panel-analysis"
+            class="side-panel-view"
+            role="tabpanel"
+            aria-labelledby="tab-analysis"
+            hidden
+          >
             <div class="drawer-panel-header">
               <div>
                 <p class="panel-kicker">Analysis</p>
@@ -123,22 +171,15 @@
             <div id="analysisResults" class="analysis-results">
               <p class="empty-copy">No analysis yet.</p>
             </div>
-          </div>
-        </details>
+          </section>
 
-        <details class="drawer" id="toolsDrawer">
-          <summary class="drawer-tab" title="Tools">
-            <span class="drawer-tab-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
-                <path d="M13.5 7.5l3 3"></path>
-                <path d="M5 21h14"></path>
-              </svg>
-            </span>
-            <span class="drawer-tab-text">Tools</span>
-          </summary>
-
-          <div class="drawer-panel">
+          <section
+            id="panel-tools"
+            class="side-panel-view"
+            role="tabpanel"
+            aria-labelledby="tab-tools"
+            hidden
+          >
             <div class="drawer-panel-header">
               <div>
                 <p class="panel-kicker">Tools</p>
@@ -165,8 +206,8 @@
                 <p class="empty-copy">Use Rhyming to get word ideas from your current line, or Random to spark a new phrase.</p>
               </div>
             </div>
-          </div>
-        </details>
+          </section>
+        </div>
       </aside>
     </main>
   </div>
@@ -185,14 +226,17 @@
     const analysisResults = document.getElementById("analysisResults");
     const songsList = document.getElementById("songsList");
     const saveStatus = document.getElementById("saveStatus");
-    const libraryDrawer = document.getElementById("libraryDrawer");
-    const analysisDrawer = document.getElementById("analysisDrawer");
-    const toolsDrawer = document.getElementById("toolsDrawer");
     const toolResults = document.getElementById("toolResults");
     const toolResultsTitle = document.getElementById("toolResultsTitle");
     const toolResultsBody = document.getElementById("toolResultsBody");
     const closeToolResultsBtn = document.getElementById("closeToolResultsBtn");
     const toolEmptyState = document.getElementById("toolEmptyState");
+    const sideTabs = Array.from(document.querySelectorAll(".side-tab"));
+    const sidePanels = {
+      library: document.getElementById("panel-library"),
+      analysis: document.getElementById("panel-analysis"),
+      tools: document.getElementById("panel-tools")
+    };
 
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (match) {
@@ -213,13 +257,20 @@
       saveStatus.classList.toggle("success", !isError && !!message);
     }
 
-    function openOnlyDrawer(targetDrawer) {
-      [libraryDrawer, analysisDrawer, toolsDrawer].forEach((drawer) => {
-        if (drawer !== targetDrawer) {
-          drawer.removeAttribute("open");
-        }
+    function activatePanel(panelName, moveFocus = false) {
+      sideTabs.forEach((tab) => {
+        const isActive = tab.dataset.panel === panelName;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", String(isActive));
+        tab.tabIndex = isActive ? 0 : -1;
+        if (isActive && moveFocus) tab.focus();
       });
-      targetDrawer.setAttribute("open", "open");
+
+      Object.entries(sidePanels).forEach(([name, panel]) => {
+        const isActive = name === panelName;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+      });
     }
 
     function showToolResults(title, html) {
@@ -227,7 +278,7 @@
       toolResultsBody.innerHTML = html;
       toolResults.hidden = false;
       toolEmptyState.hidden = true;
-      openOnlyDrawer(toolsDrawer);
+      activatePanel("tools");
     }
 
     function hideToolResults() {
@@ -323,16 +374,29 @@
       );
     }
 
-    libraryDrawer.addEventListener("toggle", () => {
-      if (libraryDrawer.open) openOnlyDrawer(libraryDrawer);
-    });
+    sideTabs.forEach((tab, index) => {
+      tab.addEventListener("click", () => {
+        activatePanel(tab.dataset.panel);
+      });
 
-    analysisDrawer.addEventListener("toggle", () => {
-      if (analysisDrawer.open) openOnlyDrawer(analysisDrawer);
-    });
+      tab.addEventListener("keydown", (event) => {
+        let nextIndex = index;
 
-    toolsDrawer.addEventListener("toggle", () => {
-      if (toolsDrawer.open) openOnlyDrawer(toolsDrawer);
+        if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+          nextIndex = (index + 1) % sideTabs.length;
+        } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+          nextIndex = (index - 1 + sideTabs.length) % sideTabs.length;
+        } else if (event.key === "Home") {
+          nextIndex = 0;
+        } else if (event.key === "End") {
+          nextIndex = sideTabs.length - 1;
+        } else {
+          return;
+        }
+
+        event.preventDefault();
+        activatePanel(sideTabs[nextIndex].dataset.panel, true);
+      });
     });
 
     closeToolResultsBtn.addEventListener("click", hideToolResults);
@@ -392,7 +456,7 @@
         isPublic.checked = !!data.song.is_public;
 
         setStatus(`Loaded "${data.song.title}".`);
-        openOnlyDrawer(libraryDrawer);
+        activatePanel("library");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         setStatus("Could not load song.", true);
@@ -532,7 +596,7 @@
           </div>
         `;
 
-        openOnlyDrawer(analysisDrawer);
+        activatePanel("analysis");
       } catch (error) {
         analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
       }
