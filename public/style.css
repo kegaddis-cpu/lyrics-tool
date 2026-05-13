@@ -20,6 +20,7 @@
   --radius-md: 14px;
   --radius-sm: 10px;
   --rail-width: 64px;
+  --topbar-height: 112px;
 }
 
 * {
@@ -31,6 +32,8 @@ body {
   margin: 0;
   padding: 0;
   min-width: 1400px;
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -56,10 +59,14 @@ button {
   cursor: pointer;
 }
 
-.page-shell {
+.app-shell {
   width: 1500px;
+  height: 100vh;
   margin: 0 auto;
-  padding: 26px 0 34px;
+  padding: 20px 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 20px;
 }
 
 .topbar {
@@ -67,12 +74,12 @@ button {
   justify-content: space-between;
   align-items: flex-start;
   gap: 18px;
-  margin-bottom: 24px;
   padding: 24px 28px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(217, 226, 236, 0.9);
   border-radius: 26px;
   box-shadow: var(--shadow-lg);
+  min-height: 92px;
 }
 
 .brand-block {
@@ -119,6 +126,8 @@ button {
 }
 
 .workspace-layout {
+  min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 12px calc(var(--panel-width) + var(--rail-width));
   gap: 0;
@@ -138,9 +147,17 @@ button {
 }
 
 .panel-editor {
-  padding: 28px;
   min-width: 0;
+  min-height: 0;
   margin-right: 14px;
+  overflow: hidden;
+}
+
+.editor-scroll {
+  height: 100%;
+  overflow: auto;
+  padding: 28px;
+  scrollbar-gutter: stable;
 }
 
 .panel-header {
@@ -214,8 +231,12 @@ input[type="text"] {
   min-height: 52px;
 }
 
+.editor-lyrics-group {
+  min-height: 0;
+}
+
 textarea {
-  min-height: 680px;
+  min-height: 560px;
   resize: vertical;
   line-height: 1.6;
 }
@@ -333,6 +354,7 @@ textarea:focus {
 .panel-resizer {
   position: relative;
   width: 12px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,15 +374,17 @@ textarea:focus {
 
 .panel-resizer-grip {
   width: 4px;
-  height: 64px;
+  height: 100%;
   border-radius: 999px;
   background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
 }
 
 .side-shell {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: var(--rail-width) var(--panel-width);
-  min-width: 0;
 }
 
 .workspace-layout.is-collapsed .side-shell {
@@ -368,6 +392,7 @@ textarea:focus {
 }
 
 .side-tab-rail {
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -375,12 +400,13 @@ textarea:focus {
 }
 
 .side-tab {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  min-height: 172px;
   padding: 12px 8px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.88);
@@ -422,6 +448,8 @@ textarea:focus {
 
 .side-panel {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   overflow: hidden;
   opacity: 1;
   transition: opacity 180ms ease;
@@ -453,11 +481,14 @@ textarea:focus {
 
 .side-panel-body {
   min-width: 0;
+  min-height: 0;
+  height: calc(100% - 54px);
 }
 
 .side-panel-view {
   display: none;
   height: 100%;
+  min-height: 0;
 }
 
 .side-panel-view.is-active {
@@ -477,9 +508,11 @@ textarea:focus {
 .analysis-results,
 .tools-panel-body {
   padding: 14px 18px 18px;
-  max-height: 680px;
-  overflow: auto;
   min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .songs-list {
