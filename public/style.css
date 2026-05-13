@@ -541,6 +541,139 @@ button:active,
   color: #057a55;
   font-weight: 700;
 }
+/* === START: addition to public/style.css === */
 
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+  padding: 24px;
+}
+
+.editor-panel,
+.songs-panel,
+.results-panel {
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.panel-heading {
+  margin-bottom: 16px;
+}
+
+.panel-heading h2 {
+  margin-bottom: 4px;
+}
+
+.song-meta-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.song-meta-row input[type="text"] {
+  flex: 1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.save-status {
+  min-height: 24px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #0c6b58;
+}
+
+.error-text {
+  color: #b42318;
+}
+
+.songs-list {
+  display: grid;
+  gap: 12px;
+}
+
+.song-card {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+
+.song-card h3 {
+  margin-bottom: 4px;
+}
+
+.song-card p {
+  margin-bottom: 12px;
+  color: #666;
+}
+
+.song-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat-box {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.stat-box strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.stat-box span {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.analysis-block {
+  margin-top: 16px;
+}
+
+.welcome-text {
+  margin-top: 6px;
+  color: #555;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .song-meta-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* === END: addition to public/style.css === */
 /* === END: addition to public/style.css === */
 }
