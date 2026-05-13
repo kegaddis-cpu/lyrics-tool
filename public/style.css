@@ -140,6 +140,11 @@ button {
   transition: grid-template-columns 180ms ease;
 }
 
+.workspace-layout > * {
+  min-width: 0;
+  min-height: 0;
+}
+
 .workspace-layout.is-collapsed {
   grid-template-columns: minmax(0, 1fr) 0px var(--rail-width);
 }
@@ -449,6 +454,13 @@ textarea:focus {
   letter-spacing: 0.14em;
   font-size: 0.76rem;
   font-weight: 700;
+}
+
+.side-shell,
+.side-panel,
+.panel-editor {
+  min-width: 0;
+  min-height: 0;
 }
 
 .side-panel {
