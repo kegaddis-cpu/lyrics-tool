@@ -59,19 +59,20 @@ button {
 .desktop-scroll-shell {
   width: 100%;
   min-width: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
-  padding: 20px 20px 24px;
+  padding: 16px;
 }
 
 .app-shell {
-  width: 1500px;
-  min-width: 1500px;
-  height: calc(100vh - 44px);
+  width: min(100%, 1280px);
+  max-width: 1280px;
+  min-width: 0;
+  height: calc(100vh - 32px);
   margin: 0 auto;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 20px;
+  gap: 16px;
 }
 
 .topbar {
@@ -79,12 +80,12 @@ button {
   justify-content: space-between;
   align-items: flex-start;
   gap: 18px;
-  padding: 24px 28px;
+  padding: 20px 24px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(217, 226, 236, 0.9);
-  border-radius: 26px;
+  border-radius: 22px;
   box-shadow: var(--shadow-lg);
-  min-height: 92px;
+  min-height: 88px;
 }
 
 .brand-block {
@@ -93,14 +94,14 @@ button {
 
 .brand-block h1 {
   margin: 4px 0 8px;
-  font-size: 2rem;
+  font-size: 1.8rem;
   line-height: 1.08;
   letter-spacing: -0.035em;
 }
 
 .eyebrow {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.14em;
@@ -126,7 +127,7 @@ button {
   border: 1px solid var(--surface-border);
   border-radius: 999px;
   color: var(--text-soft);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
@@ -134,7 +135,7 @@ button {
   min-height: 0;
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 12px calc(var(--panel-width) + var(--rail-width));
+  grid-template-columns: minmax(0, 1fr) 10px calc(var(--panel-width) + var(--rail-width));
   gap: 0;
   align-items: stretch;
   transition: grid-template-columns 180ms ease;
@@ -152,21 +153,21 @@ button {
 .panel {
   background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(217, 226, 236, 0.9);
-  border-radius: 26px;
+  border-radius: 22px;
   box-shadow: var(--shadow-lg);
 }
 
 .panel-editor {
   min-width: 0;
   min-height: 0;
-  margin-right: 14px;
+  margin-right: 12px;
   overflow: hidden;
 }
 
 .editor-scroll {
   height: 100%;
   overflow: auto;
-  padding: 28px;
+  padding: 22px;
   scrollbar-gutter: stable;
 }
 
@@ -175,19 +176,19 @@ button {
   justify-content: space-between;
   gap: 18px;
   align-items: flex-start;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
 }
 
 .panel-header h2,
 .drawer-panel-header h2 {
   margin: 4px 0 0;
-  font-size: 1.35rem;
+  font-size: 1.22rem;
   letter-spacing: -0.025em;
 }
 
 .panel-kicker {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-faint);
@@ -198,19 +199,19 @@ button {
 .drawer-copy {
   margin: 0;
   color: var(--text-soft);
-  line-height: 1.55;
-  font-size: 0.95rem;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .panel-copy {
-  max-width: 300px;
+  max-width: 280px;
 }
 
 .meta-row {
   display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 16px;
-  margin-bottom: 18px;
+  grid-template-columns: 1fr 200px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .field-group {
@@ -221,7 +222,7 @@ button {
 }
 
 .field-group label {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-soft);
 }
@@ -232,13 +233,13 @@ textarea {
   border: 1px solid var(--surface-border);
   background: var(--surface);
   color: var(--text);
-  border-radius: 16px;
-  padding: 14px 16px;
+  border-radius: 14px;
+  padding: 13px 15px;
   outline: none;
 }
 
 input[type="text"] {
-  min-height: 52px;
+  min-height: 48px;
 }
 
 .editor-lyrics-group {
@@ -246,7 +247,7 @@ input[type="text"] {
 }
 
 textarea {
-  min-height: 560px;
+  min-height: 520px;
   resize: vertical;
   line-height: 1.6;
 }
@@ -262,10 +263,10 @@ textarea:focus {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
+  min-height: 48px;
   padding: 12px 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 16px;
+  border-radius: 14px;
   background: var(--surface);
 }
 
@@ -276,12 +277,12 @@ textarea:focus {
 }
 
 .toggle-copy strong {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 .toggle-copy small {
   color: var(--text-faint);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
 .toggle-card input[type="checkbox"] {
@@ -292,9 +293,9 @@ textarea:focus {
 
 .action-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
 .primary-btn,
@@ -304,7 +305,7 @@ textarea:focus {
   appearance: none;
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 11px 15px;
   font-weight: 600;
 }
 
@@ -342,14 +343,14 @@ textarea:focus {
 }
 
 .small-btn {
-  padding: 9px 12px;
-  font-size: 0.92rem;
+  padding: 8px 11px;
+  font-size: 0.88rem;
 }
 
 .status-line {
   min-height: 22px;
   margin: 14px 0 0;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
 }
 
@@ -363,7 +364,7 @@ textarea:focus {
 
 .panel-resizer {
   position: relative;
-  width: 12px;
+  width: 10px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -405,8 +406,8 @@ textarea:focus {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 0 14px 14px;
+  gap: 10px;
+  padding: 12px 0 12px 12px;
 }
 
 .side-tab {
@@ -416,9 +417,9 @@ textarea:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 12px 8px;
-  border-radius: 18px;
+  gap: 10px;
+  padding: 10px 6px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(217, 226, 236, 0.92);
   color: var(--text-soft);
@@ -435,24 +436,24 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: var(--surface-soft);
   color: currentColor;
 }
 
 .side-tab-icon svg {
-  width: 19px;
-  height: 19px;
+  width: 18px;
+  height: 18px;
 }
 
 .side-tab-text {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -484,12 +485,12 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px 0;
+  padding: 14px 16px 0;
 }
 
 .side-panel-label {
   margin: 0;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -499,7 +500,7 @@ textarea:focus {
 .side-panel-body {
   min-width: 0;
   min-height: 0;
-  height: calc(100% - 54px);
+  height: calc(100% - 50px);
 }
 
 .side-panel-view {
@@ -514,17 +515,17 @@ textarea:focus {
 }
 
 .drawer-panel-header {
-  padding: 12px 18px 0;
+  padding: 10px 16px 0;
 }
 
 .drawer-copy {
-  padding: 10px 18px 0;
+  padding: 8px 16px 0;
 }
 
 .songs-list,
 .analysis-results,
 .tools-panel-body {
-  padding: 14px 18px 18px;
+  padding: 12px 16px 16px;
   min-width: 0;
   min-height: 0;
   flex: 1 1 auto;
@@ -535,12 +536,12 @@ textarea:focus {
 .songs-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .song-card {
-  padding: 15px;
-  border-radius: 18px;
+  padding: 14px;
+  border-radius: 16px;
   border: 1px solid var(--surface-border);
   background: var(--surface-soft);
 }
@@ -555,19 +556,20 @@ textarea:focus {
 
 .song-card h3 {
   margin: 0 0 4px;
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .song-card-head p {
   margin: 0;
   color: var(--text-faint);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
 }
 
 .song-preview {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   color: var(--text-soft);
-  line-height: 1.5;
+  line-height: 1.45;
+  font-size: 0.92rem;
 }
 
 .song-card-actions {
@@ -600,9 +602,9 @@ textarea:focus {
 }
 
 .tool-results {
-  padding: 16px;
+  padding: 14px;
   border: 1px solid var(--surface-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--surface-soft);
 }
 
@@ -616,7 +618,7 @@ textarea:focus {
 
 .tool-results-head h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.96rem;
 }
 
 .tool-results-body {
@@ -628,7 +630,7 @@ textarea:focus {
 .tool-chip-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .chip-btn {
@@ -636,7 +638,7 @@ textarea:focus {
   background: #fff;
   color: var(--text);
   border-radius: 999px;
-  padding: 9px 12px;
+  padding: 8px 11px;
   font-weight: 600;
 }
 
@@ -646,7 +648,7 @@ textarea:focus {
 
 .tool-empty-state {
   padding: 14px;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px dashed var(--surface-border);
   background: var(--surface-soft);
 }
@@ -654,12 +656,12 @@ textarea:focus {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .stat-card {
-  padding: 14px;
-  border-radius: 16px;
+  padding: 13px;
+  border-radius: 14px;
   background: var(--surface-soft);
   border: 1px solid var(--surface-border);
 }
@@ -667,39 +669,41 @@ textarea:focus {
 .stat-card span {
   display: block;
   margin-bottom: 8px;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .stat-card strong {
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   letter-spacing: -0.03em;
 }
 
 .analysis-card {
-  padding: 16px;
+  padding: 14px;
   background: var(--surface-soft);
   border: 1px solid var(--surface-border);
-  border-radius: 16px;
+  border-radius: 14px;
 }
 
 .analysis-card h3 {
   margin: 0 0 10px;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
 }
 
 .analysis-card p {
   margin: 0;
   color: var(--text-soft);
-  line-height: 1.55;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 .empty-copy {
   margin: 0;
   color: var(--text-faint);
-  line-height: 1.55;
+  line-height: 1.5;
+  font-size: 0.92rem;
 }
 
 /* === END: public/style.css === */
