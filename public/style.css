@@ -1,7 +1,6 @@
 /* === START: public/style.css === */
 
 :root {
-  --bg: #f4f7fb;
   --surface: #ffffff;
   --surface-soft: #f8fafc;
   --surface-soft-2: #f1f5f9;
@@ -32,6 +31,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  min-width: 1400px;
 }
 
 body {
@@ -53,7 +53,7 @@ button {
 }
 
 .page-shell {
-  width: min(1560px, calc(100% - 32px));
+  width: 1500px;
   margin: 0 auto;
   padding: 26px 0 34px;
 }
@@ -65,11 +65,10 @@ button {
   gap: 18px;
   margin-bottom: 24px;
   padding: 24px 28px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(217, 226, 236, 0.9);
   border-radius: 26px;
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(10px);
 }
 
 .brand-block {
@@ -101,7 +100,7 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .version-pill {
@@ -112,17 +111,18 @@ button {
   border-radius: 999px;
   color: var(--text-soft);
   font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .workspace-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) calc(var(--side-panel-width) + var(--side-tabs-width));
+  grid-template-columns: 1fr calc(var(--side-panel-width) + var(--side-tabs-width));
   gap: 20px;
   align-items: start;
 }
 
 .panel {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   border: 1px solid rgba(217, 226, 236, 0.9);
   border-radius: 26px;
   box-shadow: var(--shadow-lg);
@@ -166,12 +166,12 @@ button {
 }
 
 .panel-copy {
-  max-width: 280px;
+  max-width: 300px;
 }
 
 .meta-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: 1fr 220px;
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -189,21 +189,15 @@ button {
   color: var(--text-soft);
 }
 
-.field-grow {
-  min-width: 0;
-}
-
 input[type="text"],
 textarea {
   width: 100%;
-  max-width: 100%;
   border: 1px solid var(--surface-border);
   background: var(--surface);
   color: var(--text);
   border-radius: 16px;
   padding: 14px 16px;
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
 input[type="text"] {
@@ -211,7 +205,7 @@ input[type="text"] {
 }
 
 textarea {
-  min-height: 640px;
+  min-height: 680px;
   resize: vertical;
   line-height: 1.6;
 }
@@ -271,16 +265,6 @@ textarea:focus {
   border-radius: 12px;
   padding: 12px 16px;
   font-weight: 600;
-  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.primary-btn:hover,
-.accent-btn:hover,
-.secondary-btn:hover,
-.ghost-btn:hover,
-.chip-btn:hover,
-.side-tab:hover {
-  transform: translateY(-1px);
 }
 
 .primary-btn {
@@ -337,13 +321,9 @@ textarea:focus {
 }
 
 .side-panel {
-  position: sticky;
-  top: 24px;
   display: grid;
-  grid-template-columns: var(--side-tabs-width) minmax(0, 1fr);
-  min-width: 0;
-  min-height: 700px;
-  align-self: start;
+  grid-template-columns: var(--side-tabs-width) 1fr;
+  min-height: 760px;
   overflow: hidden;
 }
 
@@ -375,7 +355,6 @@ textarea:focus {
   background: linear-gradient(180deg, rgba(29, 78, 216, 0.08), rgba(29, 78, 216, 0.02));
   border-color: rgba(29, 78, 216, 0.3);
   color: var(--primary);
-  box-shadow: 0 16px 34px rgba(29, 78, 216, 0.14);
 }
 
 .side-tab-icon {
@@ -405,7 +384,6 @@ textarea:focus {
 
 .side-panel-body {
   min-width: 0;
-  overflow: hidden;
 }
 
 .side-panel-view {
@@ -430,7 +408,7 @@ textarea:focus {
 .analysis-results,
 .tools-panel-body {
   padding: 14px 18px 18px;
-  max-height: 62vh;
+  max-height: 680px;
   overflow: auto;
   min-width: 0;
 }
@@ -471,8 +449,6 @@ textarea:focus {
   margin: 0 0 14px;
   color: var(--text-soft);
   line-height: 1.5;
-  font-size: 0.93rem;
-  overflow-wrap: anywhere;
 }
 
 .song-card-actions {
@@ -492,10 +468,6 @@ textarea:focus {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.tool-row-drawer {
-  margin-top: 0;
 }
 
 .tool-btn {
@@ -532,7 +504,6 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 0;
 }
 
 .tool-chip-list {
@@ -604,110 +575,12 @@ textarea:focus {
   margin: 0;
   color: var(--text-soft);
   line-height: 1.55;
-  overflow-wrap: anywhere;
 }
 
 .empty-copy {
   margin: 0;
   color: var(--text-faint);
   line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-
-@media (max-width: 1100px) {
-  .workspace-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .side-panel {
-    position: static;
-    grid-template-columns: 1fr;
-    min-height: auto;
-  }
-
-  .side-panel-tabs {
-    flex-direction: row;
-    padding: 14px 14px 0;
-    border-right: none;
-    border-bottom: 1px solid rgba(217, 226, 236, 0.92);
-    overflow-x: auto;
-  }
-
-  .side-tab {
-    min-height: auto;
-    min-width: 132px;
-    flex-direction: row;
-    padding: 14px 16px;
-  }
-
-  .side-tab-text {
-    writing-mode: horizontal-tb;
-    transform: none;
-  }
-
-  .songs-list,
-  .analysis-results,
-  .tools-panel-body {
-    max-height: none;
-  }
-
-  .tool-btn {
-    flex: 1 1 180px;
-  }
-}
-
-@media (max-width: 760px) {
-  .page-shell {
-    width: min(100%, calc(100% - 20px));
-    padding: 18px 0 24px;
-  }
-
-  .topbar,
-  .panel-editor {
-    padding: 20px;
-    border-radius: 20px;
-  }
-
-  .topbar,
-  .panel-header,
-  .meta-row {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .topbar-actions {
-    width: 100%;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .topbar-actions form,
-  .ghost-btn {
-    width: 100%;
-  }
-
-  .action-row,
-  .tool-row {
-    flex-direction: column;
-  }
-
-  .action-row button,
-  .tool-row button {
-    width: 100%;
-  }
-
-  .tool-results-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  textarea {
-    min-height: 360px;
-  }
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* === END: public/style.css === */
