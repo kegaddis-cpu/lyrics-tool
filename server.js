@@ -236,7 +236,7 @@ app.post("/logout", (req, res, next) => {
 app.get("/", requireAuth, (req, res) => {
   res.render("index", {
     username: req.session.user.username,
-    pageVersion: "INDEX_V5_SERVER_OK"
+    pageVersion: "INDEX_V6_FULL_UI"
   });
 });
 
@@ -245,7 +245,7 @@ app.get("/", requireAuth, (req, res) => {
 app.get("/api/songs", requireAuth, async (req, res) => {
   try {
     const [rows] = await db.query(
-      `SELECT id, title, is_public, created_at, updated_at
+      `SELECT id, title, lyrics, is_public, created_at, updated_at
        FROM songs
        WHERE user_id = ?
        ORDER BY updated_at DESC, created_at DESC`,
