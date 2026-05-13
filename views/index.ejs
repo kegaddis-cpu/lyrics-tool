@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=8" />
+  <link rel="stylesheet" href="/style.css?v=9" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -67,12 +67,6 @@
                 placeholder="Write your lyrics here..."
                 rows="20"
               ></textarea>
-            </div>
-
-            <div class="action-row">
-              <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
-              <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
-              <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
             </div>
 
             <p id="saveStatus" class="status-line"></p>
@@ -211,12 +205,24 @@
                     <h2>Writing tools</h2>
                   </div>
                 </div>
-                <p class="drawer-copy">Generate rhymes and random prompts without crowding the editor.</p>
+                <p class="drawer-copy">Use quick actions, generate rhymes, and spark ideas without crowding the editor.</p>
 
                 <div class="tools-panel-body">
-                  <div class="tool-row tool-row-drawer">
-                    <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
-                    <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
+                  <div class="tool-section">
+                    <p class="tool-section-label">Song actions</p>
+                    <div class="tool-action-grid">
+                      <button id="analyzeBtn" type="button" class="primary-btn tool-action-btn">Analyze</button>
+                      <button id="saveSongBtn" type="button" class="accent-btn tool-action-btn">Save Song</button>
+                      <button id="newSongBtn" type="button" class="secondary-btn tool-action-btn">New Song</button>
+                    </div>
+                  </div>
+
+                  <div class="tool-section">
+                    <p class="tool-section-label">Writing prompts</p>
+                    <div class="tool-row tool-row-drawer">
+                      <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
+                      <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
+                    </div>
                   </div>
 
                   <div id="toolResults" class="tool-results" hidden>
@@ -228,7 +234,7 @@
                   </div>
 
                   <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Use Rhyming to get word ideas from your current line, or Random to spark a new phrase.</p>
+                    <p class="empty-copy">Use Analyze to inspect the current draft, Save Song to store your work, New Song to clear the editor, Rhyming to get word ideas, or Random to spark a new phrase.</p>
                   </div>
                 </div>
               </section>
