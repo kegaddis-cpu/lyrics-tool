@@ -234,7 +234,10 @@ app.post("/logout", (req, res, next) => {
 // --- App routes ---
 
 app.get("/", requireAuth, (req, res) => {
-  res.render("index", { username: req.session.user.username });
+  res.render("index", {
+    username: req.session.user.username,
+    pageVersion: "INDEX_V5_SERVER_OK"
+  });
 });
 
 // --- Song routes ---
