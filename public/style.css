@@ -20,6 +20,8 @@
   --radius-lg: 18px;
   --radius-md: 14px;
   --radius-sm: 10px;
+  --drawer-tab-width: 58px;
+  --drawer-open-width: 360px;
 }
 
 * {
@@ -52,7 +54,7 @@ button {
 }
 
 .page-shell {
-  max-width: 1440px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: 26px 22px 34px;
 }
@@ -111,7 +113,7 @@ button {
 
 .workspace-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) calc(var(--drawer-open-width) + var(--drawer-tab-width));
   gap: 24px;
   align-items: start;
 }
@@ -137,7 +139,7 @@ button {
 }
 
 .panel-header h2,
-.rail-summary h2 {
+.drawer-panel-header h2 {
   margin: 4px 0 0;
   font-size: 1.35rem;
   letter-spacing: -0.025em;
@@ -153,7 +155,7 @@ button {
 }
 
 .panel-copy,
-.rail-copy {
+.drawer-copy {
   margin: 0;
   color: var(--text-soft);
   line-height: 1.55;
@@ -263,7 +265,7 @@ textarea:focus {
   border-radius: 12px;
   padding: 12px 16px;
   font-weight: 600;
-  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease, border-color 120ms ease;
+  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .primary-btn:hover,
@@ -326,75 +328,143 @@ textarea:focus {
   color: var(--danger);
 }
 
-.side-rail {
+.drawer-rail {
   position: sticky;
   top: 24px;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-height: calc(100vh - 48px);
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: 680px;
 }
 
-.rail-panel {
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(217, 226, 236, 0.9);
-  border-radius: 22px;
-  box-shadow: var(--shadow-md);
-}
-
-.rail-summary {
-  list-style: none;
+.drawer {
+  position: relative;
   display: flex;
+  align-items: stretch;
+  width: var(--drawer-tab-width);
+  min-width: var(--drawer-tab-width);
+}
+
+.drawer[open] {
+  width: calc(var(--drawer-open-width) + var(--drawer-tab-width));
+}
+
+.drawer-tab {
+  list-style: none;
+  width: var(--drawer-tab-width);
+  min-width: var(--drawer-tab-width);
+  height: 228px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 18px 16px;
+  justify-content: center;
+  gap: 14px;
   cursor: pointer;
   user-select: none;
+  border: 1px solid rgba(217, 226, 236, 0.9);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 2;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
-.rail-summary::-webkit-details-marker {
+.drawer-tab::-webkit-details-marker {
   display: none;
 }
 
-.rail-icon {
+.drawer-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(29, 78, 216, 0.25);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+}
+
+.drawer[open] .drawer-tab {
+  background: linear-gradient(180deg, rgba(29, 78, 216, 0.08), rgba(29, 78, 216, 0.02));
+  border-color: rgba(29, 78, 216, 0.3);
+  color: var(--primary);
+  box-shadow: 0 16px 34px rgba(29, 78, 216, 0.14);
+}
+
+.drawer-panel {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  margin-left: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(217, 226, 236, 0.92);
+  border-radius: 22px;
+  box-shadow: var(--shadow-md);
+  transition: opacity 160ms ease;
+}
+
+.drawer[open] .drawer-panel {
+  width: var(--drawer-open-width);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer-tab-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
   background: var(--surface-soft);
-  border: 1px solid var(--surface-border);
   color: var(--text-soft);
-  font-size: 1rem;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.drawer-tab-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.drawer[open] .drawer-tab-icon {
+  background: rgba(29, 78, 216, 0.12);
+  color: var(--primary);
+  transform: scale(1.03);
+}
+
+.drawer-tab-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
   font-weight: 700;
-  transition: transform 160ms ease;
+  color: var(--text-soft);
+  transition: color 140ms ease;
 }
 
-.rail-panel[open] .rail-icon {
-  transform: rotate(45deg);
+.drawer[open] .drawer-tab-text {
+  color: var(--primary);
 }
 
-.rail-body {
-  padding: 0 18px 18px;
-  border-top: 1px solid var(--surface-border);
-  background: linear-gradient(180deg, rgba(248, 250, 252, 0.2), rgba(248, 250, 252, 0.7));
+.drawer-panel-header {
+  padding: 18px 18px 0;
 }
 
-.rail-copy {
-  padding-top: 14px;
-  margin-bottom: 14px;
+.drawer-copy {
+  padding: 10px 18px 0;
+}
+
+.songs-list,
+.analysis-results {
+  padding: 14px 18px 18px;
+  max-height: 62vh;
+  overflow: auto;
 }
 
 .songs-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 42vh;
-  overflow: auto;
-  padding-right: 4px;
 }
 
 .song-card {
@@ -440,9 +510,6 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 42vh;
-  overflow: auto;
-  padding-right: 4px;
 }
 
 .stats-grid {
@@ -496,14 +563,47 @@ textarea:focus {
   line-height: 1.55;
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1260px) {
   .workspace-layout {
     grid-template-columns: 1fr;
   }
 
-  .side-rail {
+  .drawer-rail {
     position: static;
-    max-height: none;
+    min-height: auto;
+    flex-direction: column;
+  }
+
+  .drawer,
+  .drawer[open] {
+    width: 100%;
+  }
+
+  .drawer-tab {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    min-height: 60px;
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 18px;
+  }
+
+  .drawer-tab-text {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+
+  .drawer-panel {
+    width: 100%;
+    opacity: 1;
+    pointer-events: auto;
+    margin-left: 0;
+    margin-top: 10px;
+  }
+
+  .drawer:not([open]) .drawer-panel {
+    display: none;
   }
 
   .songs-list,
@@ -551,6 +651,10 @@ textarea:focus {
 
   textarea {
     min-height: 360px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 
