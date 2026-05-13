@@ -8,69 +8,98 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main style="max-width: 1100px; margin: 30px auto; padding: 20px; font-family: Arial, sans-serif;">
-    <header style="display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
-      <div>
-        <h1 style="margin: 0 0 8px 0;">Lyrics Helper</h1>
-        <p style="margin: 0 0 6px 0;">Welcome, <%= username %></p>
-        <p style="margin: 0; font-size: 12px; color: #b42318;">Version: <%= pageVersion %></p>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <p class="eyebrow">Lyrics workspace</p>
+        <h1>Lyrics Helper</h1>
+        <p class="welcome-line">Welcome, <%= username %></p>
       </div>
 
-      <form action="/logout" method="POST">
-        <button type="submit" style="padding: 10px 14px;">Logout</button>
-      </form>
+      <div class="topbar-actions">
+        <p class="version-pill">Version: <%= pageVersion %></p>
+        <form action="/logout" method="POST">
+          <button type="submit" class="ghost-btn">Logout</button>
+        </form>
+      </div>
     </header>
 
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-      <section style="border: 1px solid #ddd; border-radius: 10px; padding: 20px;">
-        <h2 style="margin-top: 0;">Editor</h2>
+    <main class="dashboard-grid">
+      <section class="panel panel-editor">
+        <div class="panel-header">
+          <div>
+            <p class="panel-kicker">Editor</p>
+            <h2>Write and save</h2>
+          </div>
+          <p class="panel-copy">Draft lyrics, run analysis, and save songs to your account.</p>
+        </div>
 
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-          <input
-            type="text"
-            id="songTitle"
-            placeholder="Song title"
-            maxlength="255"
-            style="flex: 1; min-width: 220px; padding: 10px;"
-          />
+        <div class="meta-row">
+          <div class="field-group field-grow">
+            <label for="songTitle">Song title</label>
+            <input
+              type="text"
+              id="songTitle"
+              placeholder="Enter a title"
+              maxlength="255"
+            />
+          </div>
 
-          <label style="display: flex; align-items: center; gap: 8px;">
+          <label class="toggle-card" for="isPublic">
+            <span class="toggle-copy">
+              <strong>Public</strong>
+              <small>Visible to others later</small>
+            </span>
             <input type="checkbox" id="isPublic" />
-            <span>Public</span>
           </label>
         </div>
 
-        <textarea
-          id="lyricsInput"
-          placeholder="Write your lyrics here..."
-          rows="16"
-          style="width: 100%; padding: 12px; margin-bottom: 12px;"
-        ></textarea>
-
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
-          <button id="analyzeBtn" type="button" style="padding: 10px 14px;">Analyze</button>
-          <button id="saveSongBtn" type="button" style="padding: 10px 14px; background: #0c6b58; color: #fff; border: none; border-radius: 6px;">Save Song</button>
-          <button id="newSongBtn" type="button" style="padding: 10px 14px;">New Song</button>
+        <div class="field-group">
+          <label for="lyricsInput">Lyrics</label>
+          <textarea
+            id="lyricsInput"
+            placeholder="Write your lyrics here..."
+            rows="18"
+          ></textarea>
         </div>
 
-        <p id="saveStatus" style="min-height: 20px; margin-bottom: 16px;"></p>
+        <div class="action-row">
+          <button id="analyzeBtn" type="button" class="primary-btn">Analyze</button>
+          <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
+          <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
+        </div>
 
-        <section>
-          <h2>Analysis</h2>
-          <div id="analysisResults">
-            <p>No analysis yet.</p>
+        <p id="saveStatus" class="status-line"></p>
+
+        <section class="analysis-section">
+          <div class="section-header">
+            <div>
+              <p class="panel-kicker">Analysis</p>
+              <h2>Song insights</h2>
+            </div>
+          </div>
+
+          <div id="analysisResults" class="analysis-results">
+            <p class="empty-copy">No analysis yet.</p>
           </div>
         </section>
       </section>
 
-      <aside style="border: 1px solid #ddd; border-radius: 10px; padding: 20px;">
-        <h2 style="margin-top: 0;">My Songs</h2>
-        <div id="songsList">
-          <p>Loading songs...</p>
+      <aside class="panel panel-sidebar">
+        <div class="panel-header sidebar-header">
+          <div>
+            <p class="panel-kicker">Library</p>
+            <h2>My songs</h2>
+          </div>
+          <p class="panel-copy">Load, update, and delete saved drafts.</p>
+        </div>
+
+        <div id="songsList" class="songs-list">
+          <p class="empty-copy">Loading songs...</p>
         </div>
       </aside>
-    </div>
-  </main>
+    </main>
+  </div>
 
   <script>
     let currentSongId = null;
@@ -100,40 +129,46 @@
 
     function setStatus(message, isError = false) {
       saveStatus.textContent = message;
-      saveStatus.style.color = isError ? "#b42318" : "#0c6b58";
+      saveStatus.classList.toggle("error", isError);
+      saveStatus.classList.toggle("success", !isError && !!message);
     }
 
     async function loadSongs() {
-      songsList.innerHTML = "<p>Loading songs...</p>";
+      songsList.innerHTML = '<p class="empty-copy">Loading songs...</p>';
 
       try {
         const response = await fetch("/api/songs");
         const data = await response.json();
 
         if (!response.ok) {
-          songsList.innerHTML = "<p>" + escapeHtml(data.details || data.error || "Failed to load songs.") + "</p>";
+          songsList.innerHTML = `<p class="empty-copy">${escapeHtml(data.details || data.error || "Failed to load songs.")}</p>`;
           return;
         }
 
         if (!data.songs || !data.songs.length) {
-          songsList.innerHTML = "<p>No songs saved yet.</p>";
+          songsList.innerHTML = '<p class="empty-copy">No songs saved yet.</p>';
           return;
         }
 
         songsList.innerHTML = data.songs.map((song) => `
-          <article style="border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-            <h3 style="margin: 0 0 8px 0;">${escapeHtml(song.title)}</h3>
-            <p style="margin: 0 0 10px 0; font-size: 14px; color: #555;">
-              ${song.is_public ? "Public" : "Private"}
-            </p>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button type="button" onclick="openSong(${song.id})">Load</button>
-              <button type="button" onclick="deleteSong(${song.id})">Delete</button>
+          <article class="song-card">
+            <div class="song-card-head">
+              <div>
+                <h3>${escapeHtml(song.title)}</h3>
+                <p>${song.is_public ? "Public" : "Private"}</p>
+              </div>
+            </div>
+
+            <p class="song-preview">${escapeHtml((song.lyrics || "").slice(0, 100)) || "No lyrics saved yet."}</p>
+
+            <div class="song-card-actions">
+              <button type="button" class="primary-btn small-btn" onclick="openSong(${song.id})">Load</button>
+              <button type="button" class="secondary-btn small-btn" onclick="deleteSong(${song.id})">Delete</button>
             </div>
           </article>
         `).join("");
       } catch (error) {
-        songsList.innerHTML = "<p>Could not load songs.</p>";
+        songsList.innerHTML = '<p class="empty-copy">Could not load songs.</p>';
       }
     }
 
@@ -153,6 +188,7 @@
         isPublic.checked = !!data.song.is_public;
 
         setStatus(`Loaded "${data.song.title}".`);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (error) {
         setStatus("Could not load song.", true);
       }
@@ -222,7 +258,7 @@
           songTitle.value = "";
           lyricsInput.value = "";
           isPublic.checked = false;
-          analysisResults.innerHTML = "<p>No analysis yet.</p>";
+          analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
         }
 
         setStatus("Song deleted.");
@@ -237,7 +273,7 @@
       songTitle.value = "";
       lyricsInput.value = "";
       isPublic.checked = false;
-      analysisResults.innerHTML = "<p>No analysis yet.</p>";
+      analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
       setStatus("Ready for a new song.");
     }
 
@@ -254,28 +290,42 @@
         const data = await response.json();
 
         if (!response.ok) {
-          analysisResults.innerHTML = "<p>Could not analyze lyrics.</p>";
+          analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
           return;
         }
 
         analysisResults.innerHTML = `
-          <div style="display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 12px; margin-bottom: 16px;">
-            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 8px;"><strong>Lines</strong><br>${data.lineCount}</div>
-            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 8px;"><strong>Words</strong><br>${data.wordCount}</div>
-            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 8px;"><strong>Avg/Line</strong><br>${data.averageWordsPerLine}</div>
-            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 8px;"><strong>Sections</strong><br>${data.sectionCount}</div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span>Lines</span>
+              <strong>${data.lineCount}</strong>
+            </div>
+            <div class="stat-card">
+              <span>Words</span>
+              <strong>${data.wordCount}</strong>
+            </div>
+            <div class="stat-card">
+              <span>Avg / line</span>
+              <strong>${data.averageWordsPerLine}</strong>
+            </div>
+            <div class="stat-card">
+              <span>Sections</span>
+              <strong>${data.sectionCount}</strong>
+            </div>
           </div>
-          <div style="margin-bottom: 12px;">
-            <h3>Detected Sections</h3>
+
+          <div class="analysis-card">
+            <h3>Detected sections</h3>
             <p>${data.detectedSections.length ? data.detectedSections.map(escapeHtml).join(", ") : "None detected"}</p>
           </div>
-          <div>
-            <h3>Longest Line</h3>
+
+          <div class="analysis-card">
+            <h3>Longest line</h3>
             <p>${data.longestLine ? escapeHtml(data.longestLine) : "None"}</p>
           </div>
         `;
       } catch (error) {
-        analysisResults.innerHTML = "<p>Could not analyze lyrics.</p>";
+        analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
       }
     }
 
