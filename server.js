@@ -61,12 +61,15 @@ function countWords(text) {
 function normalizeSectionLabel(line) {
   const trimmed = line.trim();
   if (!trimmed) return null;
+
   const bracketMatch = trimmed.match(/^\[(.+)\]$/);
   if (bracketMatch) return bracketMatch[1].trim();
+
   const plainSectionMatch = trimmed.match(
     /^(verse|chorus|pre-chorus|post-chorus|bridge|outro|intro|hook|refrain)(\s*\d+)?$/i
   );
   if (plainSectionMatch) return trimmed;
+
   return null;
 }
 
@@ -249,7 +252,10 @@ app.get("/api/songs", requireAuth, async (req, res) => {
     return res.json({ songs: rows });
   } catch (err) {
     console.error("List songs error:", err);
-    return res.status(500).json({ error: "Failed to load songs." });
+    return res.status(500).json({
+      error: "Failed to load songs.",
+      details: err.message
+    });
   }
 });
 
@@ -270,7 +276,10 @@ app.get("/api/songs/:id", requireAuth, async (req, res) => {
     return res.json({ song: rows[0] });
   } catch (err) {
     console.error("Get song error:", err);
-    return res.status(500).json({ error: "Failed to load song." });
+    return res.status(500).json({
+      error: "Failed to load song.",
+      details: err.message
+    });
   }
 });
 
@@ -299,7 +308,10 @@ app.post("/api/songs", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Create song error:", err);
-    return res.status(500).json({ error: "Failed to save song." });
+    return res.status(500).json({
+      error: "Failed to save song.",
+      details: err.message
+    });
   }
 });
 
@@ -332,7 +344,10 @@ app.put("/api/songs/:id", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Update song error:", err);
-    return res.status(500).json({ error: "Failed to update song." });
+    return res.status(500).json({
+      error: "Failed to update song.",
+      details: err.message
+    });
   }
 });
 
@@ -353,7 +368,10 @@ app.delete("/api/songs/:id", requireAuth, async (req, res) => {
     });
   } catch (err) {
     console.error("Delete song error:", err);
-    return res.status(500).json({ error: "Failed to delete song." });
+    return res.status(500).json({
+      error: "Failed to delete song.",
+      details: err.message
+    });
   }
 });
 
