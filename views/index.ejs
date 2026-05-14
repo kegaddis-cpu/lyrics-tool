@@ -28,7 +28,7 @@
       <main
         class="workspace-layout is-collapsed"
         id="workspaceLayout"
-        style="--panel-width: 0px;"
+        style="--panel-width: 0px; --rail-width: <%= railWidth || '72px' %>;"
       >
         <section class="panel panel-editor">
           <div class="editor-scroll">
@@ -37,7 +37,7 @@
                 <p class="panel-kicker">Editor</p>
                 <h2>Write and save</h2>
               </div>
-              <p class="panel-copy">The side panel stays collapsed until you click a tab, and the layout now fits within the screen instead of forcing an oversized desktop canvas.</p>
+              <p class="panel-copy">Select any word in the editor, then open Rhyming to get real rhyme suggestions and double-click one to insert it back into the draft.</p>
             </div>
 
             <div class="meta-row">
@@ -85,16 +85,7 @@
 
         <div class="side-shell">
           <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-            <button
-              id="tab-library"
-              class="side-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-library"
-              data-panel="library"
-              tabindex="0"
-            >
+            <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
@@ -105,16 +96,7 @@
               <span class="side-tab-text">Library</span>
             </button>
 
-            <button
-              id="tab-analysis"
-              class="side-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-analysis"
-              data-panel="analysis"
-              tabindex="-1"
-            >
+            <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 19h16"></path>
@@ -126,16 +108,7 @@
               <span class="side-tab-text">Analysis</span>
             </button>
 
-            <button
-              id="tab-tools"
-              class="side-tab"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-tools"
-              data-panel="tools"
-              tabindex="-1"
-            >
+            <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
@@ -154,13 +127,7 @@
             </div>
 
             <div class="side-panel-body">
-              <section
-                id="panel-library"
-                class="side-panel-view"
-                role="tabpanel"
-                aria-labelledby="tab-library"
-                hidden
-              >
+              <section id="panel-library" class="side-panel-view" role="tabpanel" aria-labelledby="tab-library" hidden>
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Library</p>
@@ -173,13 +140,7 @@
                 </div>
               </section>
 
-              <section
-                id="panel-analysis"
-                class="side-panel-view"
-                role="tabpanel"
-                aria-labelledby="tab-analysis"
-                hidden
-              >
+              <section id="panel-analysis" class="side-panel-view" role="tabpanel" aria-labelledby="tab-analysis" hidden>
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Analysis</p>
@@ -192,13 +153,7 @@
                 </div>
               </section>
 
-              <section
-                id="panel-tools"
-                class="side-panel-view"
-                role="tabpanel"
-                aria-labelledby="tab-tools"
-                hidden
-              >
+              <section id="panel-tools" class="side-panel-view" role="tabpanel" aria-labelledby="tab-tools" hidden>
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Tools</p>
@@ -234,7 +189,7 @@
                   </div>
 
                   <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Use Analyze to inspect the current draft, Save Song to store your work, New Song to clear the editor, Rhyming to get word ideas, or Random to spark a new phrase.</p>
+                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch real rhyme matches. Double-click a result to insert it into your lyrics.</p>
                   </div>
                 </div>
               </section>
@@ -247,14 +202,15 @@
 
   <script>
     let currentSongId = null;
+    let lastSelectionStart = 0;
+    let lastSelectionEnd = 0;
 
     const DEFAULT_PANEL_WIDTH = 360;
     const MIN_PANEL_WIDTH = 280;
     const MAX_PANEL_WIDTH = 560;
-    const RAIL_WIDTH = 72;
+    const RAIL_WIDTH = parseInt("<%= railWidth || '72px' %>", 10) || 72;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
-    const sidePanel = document.getElementById("sidePanel");
     const panelResizeHandle = document.getElementById("panelResizeHandle");
     const collapsePanelBtn = document.getElementById("collapsePanelBtn");
     const activePanelLabel = document.getElementById("activePanelLabel");
@@ -294,6 +250,15 @@
         return map[match];
       });
     }
+
+    function rememberSelection() {
+      lastSelectionStart = lyricsInput.selectionStart || 0;
+      lastSelectionEnd = lyricsInput.selectionEnd || 0;
+    }
+
+    ["select", "click", "keyup", "mouseup", "focus"].forEach((eventName) => {
+      lyricsInput.addEventListener(eventName, rememberSelection);
+    });
 
     function setStatus(message, isError = false) {
       saveStatus.textContent = message;
@@ -380,91 +345,72 @@
       toolEmptyState.hidden = false;
     }
 
-    function getLastWord() {
+    function getSelectionOrLastWord() {
+      const selected = lyricsInput.value
+        .slice(lastSelectionStart, lastSelectionEnd)
+        .trim()
+        .toLowerCase();
+
+      if (selected && /^[a-zA-Z']+$/.test(selected)) {
+        return selected;
+      }
+
       const text = lyricsInput.value.trim();
       if (!text) return "";
+
       const words = text.match(/[A-Za-z']+/g);
       return words && words.length ? words[words.length - 1].toLowerCase() : "";
     }
 
-    function getSelectionOrLastWord() {
-      const selected = lyricsInput.value
-        .slice(lyricsInput.selectionStart, lyricsInput.selectionEnd)
-        .trim()
-        .toLowerCase();
-
-      if (selected) return selected;
-      return getLastWord();
-    }
-
-    function insertAtCursor(text, replaceSelection = false) {
-      const start = lyricsInput.selectionStart;
-      const end = lyricsInput.selectionEnd;
+    function insertWordIntoEditor(word) {
       const value = lyricsInput.value;
+      const hasTrackedCaret = typeof lastSelectionStart === "number" && typeof lastSelectionEnd === "number";
 
-      if (replaceSelection && start !== end) {
-        lyricsInput.value = value.slice(0, start) + text + value.slice(end);
-        const cursor = start + text.length;
+      if (!hasTrackedCaret) {
+        lyricsInput.value = value + (value && !value.endsWith(" ") ? " " : "") + word;
         lyricsInput.focus();
+        const cursor = lyricsInput.value.length;
         lyricsInput.setSelectionRange(cursor, cursor);
+        rememberSelection();
         return;
       }
 
-      lyricsInput.value = value.slice(0, start) + text + value.slice(end);
-      const cursor = start + text.length;
-      lyricsInput.focus();
-      lyricsInput.setSelectionRange(cursor, cursor);
-    }
+      const start = lastSelectionStart;
+      const end = lastSelectionEnd;
 
-    function replaceLastWordInLine(newWord) {
-      const value = lyricsInput.value;
-      const caret = lyricsInput.selectionStart;
+      const insertionPrefix =
+        start > 0 && !/\s/.test(value[start - 1]) ? " " : "";
 
-      const lineStart = value.lastIndexOf("\n", caret - 1) + 1;
-      const lineEnd = value.indexOf("\n", caret);
-      const effectiveLineEnd = lineEnd === -1 ? value.length : lineEnd;
-      const lineText = value.slice(lineStart, effectiveLineEnd);
-
-      const match = lineText.match(/.*\b([\w']+)\b[^\w']*$/);
-      if (!match) {
-        insertAtCursor(newWord + " ", false);
-        return;
-      }
-
-      const lastWord = match[1];
-      const lastWordIndex = lineText.lastIndexOf(lastWord);
-      const globalWordStart = lineStart + lastWordIndex;
-      const globalWordEnd = globalWordStart + lastWord.length;
+      const insertionSuffix =
+        start === end && end < value.length && !/\s/.test(value[end]) ? " " : "";
 
       const newValue =
-        value.slice(0, globalWordStart) +
-        newWord +
-        value.slice(globalWordEnd);
+        value.slice(0, start) +
+        insertionPrefix +
+        word +
+        insertionSuffix +
+        value.slice(end);
 
+      const cursor = start + insertionPrefix.length + word.length + insertionSuffix.length;
       lyricsInput.value = newValue;
-      const cursor = globalWordStart + newWord.length;
       lyricsInput.focus();
       lyricsInput.setSelectionRange(cursor, cursor);
+      rememberSelection();
     }
 
     function getFallbackRhymes(word) {
-      return [
-        `${word} time`,
-        `${word} light`,
-        `${word} fire`,
-        `${word} sky`,
-        `${word} way`
-      ];
+      const fallbackMap = {
+        here: ["fear", "dear", "near", "beer", "clear", "year"],
+        night: ["light", "bright", "sight", "flight", "white", "might"],
+        fire: ["desire", "higher", "wire", "choir", "liar", "spire"],
+        pain: ["rain", "train", "chain", "vein", "gain", "again"]
+      };
+
+      return fallbackMap[word] || [];
     }
 
     function getFallbackRandomItems() {
-      return [
-        "midnight",
-        "echo",
-        "shadow",
-        "ember",
-        "velvet"
-      ];
+      return ["midnight", "echo", "shadow", "ember", "velvet"];
     }
 
     function renderRhymeResults(sourceWord, suggestions) {
@@ -477,13 +423,19 @@
       }
 
       showToolResults(
-        `Rhyming ideas for "${sourceWord}"`,
+        `Rhymes for "${sourceWord}"`,
         `
           <div class="tool-chip-list">
             ${suggestions.map((word) => `
-              <button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(word)})">${escapeHtml(word)}</button>
+              <button
+                type="button"
+                class="chip-btn"
+                ondblclick="insertToolWord(${JSON.stringify(word)})"
+                title="Double-click to insert"
+              >${escapeHtml(word)}</button>
             `).join("")}
           </div>
+          <p class="empty-copy">Double-click a word to insert it into the editor.</p>
         `
       );
     }
@@ -498,10 +450,16 @@
             <h3>Try one</h3>
             <div class="tool-chip-list">
               ${safeItems.map((item) => `
-                <button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(item)})">${escapeHtml(item)}</button>
+                <button
+                  type="button"
+                  class="chip-btn"
+                  ondblclick="insertToolWord(${JSON.stringify(item)})"
+                  title="Double-click to insert"
+                >${escapeHtml(item)}</button>
               `).join("")}
             </div>
           </div>
+          <p class="empty-copy">Double-click a word to insert it into the editor.</p>
         `
       );
     }
@@ -768,7 +726,7 @@
       if (!sourceWord) {
         showToolResults(
           "Rhyming ideas",
-          `<p class="empty-copy">Select a word or type a line first, then use Rhyming.</p>`
+          `<p class="empty-copy">Select a word or place your cursor in the editor first.</p>`
         );
         return;
       }
@@ -787,16 +745,31 @@
           throw new Error(data.details || data.error || "Could not fetch rhymes.");
         }
 
-        const suggestions = Array.isArray(data.results) ? data.results : [];
+        const suggestions = Array.isArray(data.results)
+          ? data.results
+              .map((item) => typeof item === "string" ? item : item.word)
+              .filter(Boolean)
+          : [];
 
-        if (!suggestions.length) {
+        const cleaned = [...new Set(
+          suggestions
+            .map((word) => String(word).trim().toLowerCase())
+            .filter((word) => /^[a-zA-Z']+$/.test(word) && word !== sourceWord)
+        )].slice(0, 16);
+
+        if (!cleaned.length) {
           throw new Error("No rhyme suggestions returned.");
         }
 
-        renderRhymeResults(sourceWord, suggestions);
+        renderRhymeResults(sourceWord, cleaned);
       } catch (error) {
-        renderRhymeResults(sourceWord, getFallbackRhymes(sourceWord));
-        setStatus("Using fallback rhyme ideas.", true);
+        const fallback = getFallbackRhymes(sourceWord);
+        renderRhymeResults(sourceWord, fallback);
+        if (!fallback.length) {
+          setStatus("No rhyme suggestions found.", true);
+        } else {
+          setStatus("Using fallback rhyme ideas.", true);
+        }
       }
     }
 
@@ -807,10 +780,7 @@
       );
 
       try {
-        const params = new URLSearchParams({
-          mode: "word"
-        });
-
+        const params = new URLSearchParams({ mode: "word" });
         const response = await fetch(`/api/word-tools/random?${params.toString()}`);
         const data = await response.json();
 
@@ -843,11 +813,7 @@
     window.openSong = openSong;
     window.deleteSong = deleteSong;
     window.insertToolWord = function (word) {
-      if (lyricsInput.selectionStart !== lyricsInput.selectionEnd) {
-        insertAtCursor(word, true);
-      } else {
-        replaceLastWordInLine(word);
-      }
+      insertWordIntoEditor(word);
     };
   </script>
 </body>
