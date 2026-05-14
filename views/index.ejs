@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=9" />
+  <link rel="stylesheet" href="/style.css?v=10" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -33,7 +33,7 @@
         <section class="panel panel-editor">
           <div class="editor-scroll">
             <div class="panel-header">
-              <div>
+              <div class="panel-heading-block">
                 <p class="panel-kicker">Editor</p>
                 <h2>Write and save</h2>
               </div>
@@ -248,10 +248,10 @@
   <script>
     let currentSongId = null;
 
-    const DEFAULT_PANEL_WIDTH = 340;
-    const MIN_PANEL_WIDTH = 260;
-    const MAX_PANEL_WIDTH = 520;
-    const RAIL_WIDTH = 64;
+    const DEFAULT_PANEL_WIDTH = 360;
+    const MIN_PANEL_WIDTH = 280;
+    const MAX_PANEL_WIDTH = 560;
+    const RAIL_WIDTH = 84;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
     const sidePanel = document.getElementById("sidePanel");
@@ -397,7 +397,6 @@
       return getLastWord();
     }
 
-    // Updated insertion logic so rhymes replace words more naturally
     function insertAtCursor(text, replaceSelection = false) {
       const start = lyricsInput.selectionStart;
       const end = lyricsInput.selectionEnd;
@@ -443,7 +442,7 @@
         value.slice(globalWordEnd);
 
       lyricsInput.value = newValue;
-      const cursor = globalWordStart + newWord.length + 1;
+      const cursor = globalWordStart + newWord.length;
       lyricsInput.focus();
       lyricsInput.setSelectionRange(cursor, cursor);
     }
@@ -845,7 +844,7 @@
     window.deleteSong = deleteSong;
     window.insertToolWord = function (word) {
       if (lyricsInput.selectionStart !== lyricsInput.selectionEnd) {
-        insertAtCursor(word + " ", true);
+        insertAtCursor(word, true);
       } else {
         replaceLastWordInLine(word);
       }
