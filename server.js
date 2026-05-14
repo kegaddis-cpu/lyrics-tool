@@ -1,494 +1,245 @@
-// === START: server.js ===
-
-const path = require("path");
 const express = require("express");
 const session = require("express-session");
-const { createClient } = require("redis");
-const { RedisStore } = require("connect-redis");
-const mysql = require("mysql2/promise");
-const bcrypt = require("bcryptjs");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.set("trust proxy", 1);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, "public")));
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-const redisClient = createClient({ url: process.env.REDIS_URL });
-redisClient.on("error", (err) => console.error("Redis client error:", err));
-redisClient.connect().catch(console.error);
-
-const db = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10
-});
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
-
 app.use(
   session({
-    store: new RedisStore({ client: redisClient, prefix: "lyrics-helper:" }),
-    name: "lyrics.sid",
-    secret: process.env.SESSION_SECRET || "change-this-secret-in-production",
+    secret: process.env.SESSION_SECRET || "lyrics-helper-secret",
     resave: false,
     saveUninitialized: false,
-    rolling: true,
     cookie: {
+      secure: false,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 1000 * 60 * 60 * 24 * 7
+      sameSite: "lax"
     }
   })
 );
 
-function requireAuth(req, res, next) {
-  if (req.session && req.session.user) return next();
-  return res.redirect("/login");
-}
-
-function countWords(text) {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
-
-function normalizeSectionLabel(line) {
-  const trimmed = line.trim();
-  if (!trimmed) return null;
-
-  const bracketMatch = trimmed.match(/^\[(.+)\]$/);
-  if (bracketMatch) return bracketMatch[1].trim();
-
-  const plainSectionMatch = trimmed.match(
-    /^(verse|chorus|pre-chorus|post-chorus|bridge|outro|intro|hook|refrain)(\s*\d+)?$/i
-  );
-  if (plainSectionMatch) return trimmed;
-
-  return null;
-}
-
-function detectSections(lines) {
-  const matches = [];
-  lines.forEach((line) => {
-    const label = normalizeSectionLabel(line);
-    if (label) matches.push(label);
-  });
-  return matches;
-}
-
-function parseSections(lines) {
-  const sections = [];
-  let currentLabel = "Unlabeled";
-  let currentLines = [];
-  let idCounter = 1;
-
-  function pushSection() {
-    const content = currentLines.join("\n").trim();
-    if (!content) {
-      currentLines = [];
-      return;
-    }
-    sections.push({ id: String(idCounter++), label: currentLabel, content });
-    currentLines = [];
+// Demo in-memory data store
+let songs = [
+  {
+    id: 1,
+    title: "Midnight Echo",
+    lyrics: "I hear the city breathing slow\nA faded light in undertow",
+    is_public: false
   }
+];
 
-  for (const line of lines) {
-    const label = normalizeSectionLabel(line);
-    if (label) {
-      pushSection();
-      currentLabel = label;
-    } else {
-      currentLines.push(line);
-    }
+let nextSongId = 2;
+
+// Demo auth/session bootstrap
+app.use((req, res, next) => {
+  if (!req.session.username) {
+    req.session.username = "MonkeyMan";
   }
-
-  pushSection();
-  return sections;
-}
-
-function findLongestLine(lines) {
-  let longest = "";
-  for (const line of lines) {
-    if (line.trim().length > longest.trim().length) longest = line;
-  }
-  return longest;
-}
-
-// --- Auth routes ---
-
-app.get("/register", (req, res) => {
-  if (req.session && req.session.user) return res.redirect("/");
-  res.render("register", { error: null });
+  next();
 });
 
-app.post("/register", async (req, res, next) => {
-  const { username, email, password, confirmPassword } = req.body;
-
-  if (!username || !email || !password) {
-    return res.status(400).render("register", { error: "All fields are required." });
-  }
-
-  if (password !== confirmPassword) {
-    return res.status(400).render("register", { error: "Passwords do not match." });
-  }
-
-  if (password.length < 8) {
-    return res.status(400).render("register", { error: "Password must be at least 8 characters." });
-  }
-
-  try {
-    const [existing] = await db.query(
-      "SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1",
-      [username, email]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).render("register", { error: "Username or email is already taken." });
-    }
-
-    const passwordHash = await bcrypt.hash(password, 12);
-
-    await db.query(
-      "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-      [username, email, passwordHash]
-    );
-
-    return res.redirect("/login?registered=1");
-  } catch (err) {
-    console.error("Register error:", err);
-    return next(err);
-  }
-});
-
-app.get("/login", (req, res) => {
-  if (req.session && req.session.user) return res.redirect("/");
-  const registered = req.query.registered === "1";
-  res.render("login", { error: null, registered });
-});
-
-app.post("/login", async (req, res, next) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).render("login", {
-      error: "Username and password are required.",
-      registered: false
-    });
-  }
-
-  try {
-    const [rows] = await db.query(
-      "SELECT id, username, password_hash FROM users WHERE username = ? LIMIT 1",
-      [username]
-    );
-
-    if (rows.length === 0) {
-      return res.status(401).render("login", {
-        error: "Invalid username or password.",
-        registered: false
-      });
-    }
-
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.password_hash);
-
-    if (!match) {
-      return res.status(401).render("login", {
-        error: "Invalid username or password.",
-        registered: false
-      });
-    }
-
-    req.session.regenerate((err) => {
-      if (err) return next(err);
-
-      req.session.user = { id: user.id, username: user.username };
-
-      req.session.save((saveErr) => {
-        if (saveErr) return next(saveErr);
-        return res.redirect("/");
-      });
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    return next(err);
-  }
-});
-
-app.post("/logout", (req, res, next) => {
-  if (!req.session) return res.redirect("/login");
-
-  req.session.destroy((err) => {
-    if (err) return next(err);
-    res.clearCookie("lyrics.sid");
-    return res.redirect("/login");
-  });
-});
-
-// --- App routes ---
-
-app.get("/", requireAuth, (req, res) => {
+app.get("/", (req, res) => {
   res.render("index", {
-    username: req.session.user.username,
-    pageVersion: "INDEX_V6_FULL_UI"
+    username: req.session.username,
+    pageVersion: "INDEX_V6_FULL_UI",
+    railWidth: "72px"
   });
 });
 
-// --- Song routes ---
-
-app.get("/api/songs", requireAuth, async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      `SELECT id, title, lyrics, is_public, created_at, updated_at
-       FROM songs
-       WHERE user_id = ?
-       ORDER BY updated_at DESC, created_at DESC`,
-      [req.session.user.id]
-    );
-
-    return res.json({ songs: rows });
-  } catch (err) {
-    console.error("List songs error:", err);
-    return res.status(500).json({
-      error: "Failed to load songs.",
-      details: err.message
-    });
-  }
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/");
+  });
 });
 
-app.get("/api/songs/:id", requireAuth, async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      `SELECT id, title, lyrics, is_public, created_at, updated_at
-       FROM songs
-       WHERE id = ? AND user_id = ?
-       LIMIT 1`,
-      [req.params.id, req.session.user.id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Song not found." });
-    }
-
-    return res.json({ song: rows[0] });
-  } catch (err) {
-    console.error("Get song error:", err);
-    return res.status(500).json({
-      error: "Failed to load song.",
-      details: err.message
-    });
-  }
+app.get("/api/songs", (req, res) => {
+  res.json({ songs });
 });
 
-app.post("/api/songs", requireAuth, async (req, res) => {
-  const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
-  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
-  const isPublic = req.body.is_public ? 1 : 0;
+app.get("/api/songs/:id", (req, res) => {
+  const songId = Number(req.params.id);
+  const song = songs.find((item) => item.id === songId);
+
+  if (!song) {
+    return res.status(404).json({ error: "Song not found." });
+  }
+
+  return res.json({ song });
+});
+
+app.post("/api/songs", (req, res) => {
+  const title = String(req.body.title || "").trim();
+  const lyrics = String(req.body.lyrics || "");
+  const isPublic = !!req.body.is_public;
 
   if (!title) {
     return res.status(400).json({ error: "Title is required." });
   }
 
-  try {
-    const [result] = await db.query(
-      `INSERT INTO songs (user_id, title, lyrics, is_public)
-       VALUES (?, ?, ?, ?)`,
-      [req.session.user.id, title, lyrics, isPublic]
-    );
+  const newSong = {
+    id: nextSongId++,
+    title,
+    lyrics,
+    is_public: isPublic
+  };
 
-    req.session.draftLyrics = lyrics;
+  songs.unshift(newSong);
 
-    return res.json({
-      success: true,
-      songId: result.insertId,
-      message: "Song saved."
-    });
-  } catch (err) {
-    console.error("Create song error:", err);
-    return res.status(500).json({
-      error: "Failed to save song.",
-      details: err.message
-    });
-  }
+  return res.json({
+    message: "Song saved successfully.",
+    songId: newSong.id
+  });
 });
 
-app.put("/api/songs/:id", requireAuth, async (req, res) => {
-  const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
-  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
-  const isPublic = req.body.is_public ? 1 : 0;
+app.put("/api/songs/:id", (req, res) => {
+  const songId = Number(req.params.id);
+  const song = songs.find((item) => item.id === songId);
+
+  if (!song) {
+    return res.status(404).json({ error: "Song not found." });
+  }
+
+  const title = String(req.body.title || "").trim();
+  const lyrics = String(req.body.lyrics || "");
+  const isPublic = !!req.body.is_public;
 
   if (!title) {
     return res.status(400).json({ error: "Title is required." });
   }
 
-  try {
-    const [result] = await db.query(
-      `UPDATE songs
-       SET title = ?, lyrics = ?, is_public = ?
-       WHERE id = ? AND user_id = ?`,
-      [title, lyrics, isPublic, req.params.id, req.session.user.id]
-    );
+  song.title = title;
+  song.lyrics = lyrics;
+  song.is_public = isPublic;
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Song not found." });
-    }
+  return res.json({
+    message: "Song updated successfully.",
+    songId: song.id
+  });
+});
 
-    req.session.draftLyrics = lyrics;
+app.delete("/api/songs/:id", (req, res) => {
+  const songId = Number(req.params.id);
+  const existingIndex = songs.findIndex((item) => item.id === songId);
 
-    return res.json({
-      success: true,
-      message: "Song updated."
-    });
-  } catch (err) {
-    console.error("Update song error:", err);
-    return res.status(500).json({
-      error: "Failed to update song.",
-      details: err.message
-    });
+  if (existingIndex === -1) {
+    return res.status(404).json({ error: "Song not found." });
   }
+
+  songs.splice(existingIndex, 1);
+
+  return res.json({
+    message: "Song deleted successfully."
+  });
 });
 
-app.delete("/api/songs/:id", requireAuth, async (req, res) => {
-  try {
-    const [result] = await db.query(
-      "DELETE FROM songs WHERE id = ? AND user_id = ?",
-      [req.params.id, req.session.user.id]
-    );
+app.post("/api/analyze", (req, res) => {
+  const lyrics = String(req.body.lyrics || "");
+  const lines = lyrics
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Song not found." });
+  const words = lyrics.match(/[A-Za-z']+/g) || [];
+  const averageWordsPerLine = lines.length
+    ? (words.length / lines.length).toFixed(1)
+    : "0.0";
+
+  const detectedSections = [];
+  const sectionMatches = lyrics.match(/^(verse|chorus|bridge|hook|intro|outro)[^\n]*$/gim) || [];
+
+  sectionMatches.forEach((section) => {
+    const normalized = section.trim();
+    if (!detectedSections.includes(normalized)) {
+      detectedSections.push(normalized);
     }
+  });
 
-    return res.json({
-      success: true,
-      message: "Song deleted."
-    });
-  } catch (err) {
-    console.error("Delete song error:", err);
-    return res.status(500).json({
-      error: "Failed to delete song.",
-      details: err.message
-    });
+  let longestLine = "";
+  for (const line of lines) {
+    if (line.length > longestLine.length) {
+      longestLine = line;
+    }
   }
-});
 
-// --- Draft routes ---
-
-app.get("/api/draft", requireAuth, (req, res) => {
-  return res.json({ lyrics: req.session.draftLyrics || "" });
-});
-
-app.post("/api/draft", requireAuth, (req, res) => {
-  const lyrics = typeof req.body.lyrics === "string" ? req.body.lyrics : "";
-  req.session.draftLyrics = lyrics;
-  return res.json({ success: true, savedAt: new Date().toISOString() });
-});
-
-app.delete("/api/draft", requireAuth, (req, res) => {
-  req.session.draftLyrics = "";
-  return res.json({ success: true });
-});
-
-// --- Analyze ---
-
-app.post("/api/analyze", requireAuth, (req, res) => {
-  const lyrics = req.body.lyrics || "";
-  req.session.draftLyrics = lyrics;
-
-  const rawLines = lyrics.split("\n");
-  const nonEmptyLines = rawLines.filter((line) => line.trim() !== "");
-  const detectedSections = detectSections(rawLines);
-  const parsedSections = parseSections(rawLines);
-  const totalWords = countWords(lyrics);
-  const avgWords =
-    nonEmptyLines.length > 0 ? (totalWords / nonEmptyLines.length).toFixed(1) : "0";
-
-  res.json({
-    lineCount: nonEmptyLines.length,
-    wordCount: totalWords,
-    averageWordsPerLine: avgWords,
+  return res.json({
+    lineCount: lines.length,
+    wordCount: words.length,
+    averageWordsPerLine,
     sectionCount: detectedSections.length,
     detectedSections,
-    parsedSections,
-    longestLine: findLongestLine(rawLines)
+    longestLine
   });
 });
 
-// --- Word tools ---
-
-app.get("/api/word-tools/rhymes", requireAuth, (req, res) => {
-  const word = (req.query.word || "").toString().trim();
-  if (!word) return res.json({ word: "", results: [] });
-
-  const fallbackRhymes = [
-    `${word} time`,
-    `${word} light`,
-    `${word} fire`,
-    `${word} sky`,
-    `${word} way`
-  ];
-
-  return res.json({ word, results: fallbackRhymes });
-});
-
-app.get("/api/word-tools/syllables", requireAuth, (req, res) => {
-  const text = (req.query.word || "").toString().trim();
-  if (!text) return res.json({ text: "", syllables: 0 });
-
-  const parts = text.toLowerCase().match(/[aeiouy]+/g);
-  const syllables = parts ? parts.length : 1;
-  return res.json({ text, syllables });
-});
-
-app.get("/api/word-tools/random", requireAuth, (req, res) => {
-  const topic = (req.query.topic || "").toString().trim();
-  const mode = (req.query.mode || "word").toString();
-
-  const randomWords = ["midnight", "echo", "shadow", "ember", "velvet"];
-  const randomPhrases = [
-    "running through the silence",
-    "ghost light on the avenue",
-    "holding onto broken time",
-    "dancing with the static",
-    "fire underneath the rain"
-  ];
-
-  const pool = mode === "phrase" ? randomPhrases : randomWords;
-  const result = pool[Math.floor(Math.random() * pool.length)];
-  return res.json({ mode, topic, result });
-});
-
-// --- DB test ---
-
-app.get("/api/db-test", requireAuth, async (req, res) => {
+app.get("/api/word-tools/rhymes", async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT 1 + 1 AS result");
-    return res.json({ ok: true, result: rows[0].result });
-  } catch (err) {
-    console.error("DB test error:", err);
-    return res.status(500).json({ ok: false, error: err.message });
+    const rawWord = String(req.query.word || "").trim().toLowerCase();
+    const word = rawWord.replace(/[^a-z']/g, "");
+
+    if (!word) {
+      return res.status(400).json({
+        error: "A word is required."
+      });
+    }
+
+    const perfectUrl = `https://api.datamuse.com/words?rel_rhy=${encodeURIComponent(word)}&max=12`;
+    const nearUrl = `https://api.datamuse.com/words?rel_nry=${encodeURIComponent(word)}&max=8`;
+
+    const [perfectResponse, nearResponse] = await Promise.all([
+      fetch(perfectUrl),
+      fetch(nearUrl)
+    ]);
+
+    if (!perfectResponse.ok || !nearResponse.ok) {
+      return res.status(502).json({
+        error: "Could not fetch rhyme suggestions."
+      });
+    }
+
+    const perfectData = await perfectResponse.json();
+    const nearData = await nearResponse.json();
+
+    const combined = [...perfectData, ...nearData]
+      .map((item) => (item && item.word ? String(item.word).trim().toLowerCase() : ""))
+      .filter((item) => item && /^[a-z']+$/.test(item))
+      .filter((item) => item !== word);
+
+    const uniqueResults = [...new Set(combined)].slice(0, 16);
+
+    return res.json({
+      word,
+      results: uniqueResults
+    });
+  } catch (error) {
+    console.error("Rhyming API error:", error);
+    return res.status(500).json({
+      error: "Server error while fetching rhymes."
+    });
   }
 });
 
-// --- Error handlers ---
+app.get("/api/word-tools/random", async (req, res) => {
+  try {
+    const fallbackWords = ["midnight", "echo", "shadow", "ember", "velvet"];
+    const randomWord = fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
 
-app.use((req, res) => {
-  res.status(404).send("Page not found.");
-});
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).send("Internal server error.");
+    return res.json({
+      result: randomWord
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: "Could not fetch a random word."
+    });
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-// === END: server.js ===
