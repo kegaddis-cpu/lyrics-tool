@@ -25,17 +25,9 @@ app.use(
   })
 );
 
-// Demo in-memory data store
-let songs = [
-  {
-    id: 1,
-    title: "Midnight Echo",
-    lyrics: "I hear the city breathing slow\nA faded light in undertow",
-    is_public: false
-  }
-];
-
-let nextSongId = 2;
+// In-memory data store
+let songs = [];
+let nextSongId = 1;
 
 // Demo auth/session bootstrap
 app.use((req, res, next) => {
