@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=10" />
+  <link rel="stylesheet" href="/style.css?v=13" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -35,9 +35,9 @@
             <div class="panel-header">
               <div class="panel-heading-block">
                 <p class="panel-kicker">Editor</p>
-                <h2>Write and save</h2>
+                <h2>Write, structure, and save</h2>
               </div>
-              <p class="panel-copy">Select any word in the editor, then open Rhyming to get real rhyme suggestions and double-click one to insert it back into the draft.</p>
+              <p class="panel-copy">Build songs as draggable sections, then keep the combined lyrics synced in the main editor for analysis, rhymes, and saving.</p>
             </div>
 
             <div class="meta-row">
@@ -60,16 +60,42 @@
               </label>
             </div>
 
+            <section class="section-builder-card">
+              <div class="section-builder-head">
+                <div>
+                  <p class="panel-kicker">Song sections</p>
+                  <h3>Arrange your structure</h3>
+                </div>
+                <p class="builder-copy">Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag them into the order you want.</p>
+              </div>
+
+              <div class="section-type-row">
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
+              </div>
+
+              <div id="sectionsList" class="sections-list"></div>
+
+              <div id="sectionsEmptyState" class="sections-empty-state">
+                <p class="empty-copy">No sections yet. Start by adding a Verse or Chorus above.</p>
+              </div>
+            </section>
+
             <div class="field-group editor-lyrics-group">
-              <label for="lyricsInput">Lyrics</label>
+              <label for="lyricsInput">Full lyrics</label>
               <textarea
                 id="lyricsInput"
-                placeholder="Write your lyrics here..."
+                placeholder="Write your lyrics here, or build them from sections above..."
                 rows="20"
               ></textarea>
             </div>
 
-            <p id="saveStatus" class="status-line"></p>
+            <p id="saveStatus" class="status-line" aria-live="polite"></p>
           </div>
         </section>
 
@@ -189,7 +215,7 @@
                   </div>
 
                   <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch real rhyme matches. Double-click a result to insert it into your lyrics.</p>
+                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.</p>
                   </div>
                 </div>
               </section>
@@ -204,6 +230,10 @@
     let currentSongId = null;
     let lastSelectionStart = 0;
     let lastSelectionEnd = 0;
+    let sections = [];
+    let nextSectionId = 1;
+    let draggingSectionId = null;
+    let statusClearTimer = null;
 
     const DEFAULT_PANEL_WIDTH = 360;
     const MIN_PANEL_WIDTH = 280;
@@ -238,6 +268,10 @@
       tools: document.getElementById("panel-tools")
     };
 
+    const sectionsList = document.getElementById("sectionsList");
+    const sectionsEmptyState = document.getElementById("sectionsEmptyState");
+    const addSectionButtons = Array.from(document.querySelectorAll(".add-section-btn"));
+
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, function (match) {
         const map = {
@@ -260,10 +294,26 @@
       lyricsInput.addEventListener(eventName, rememberSelection);
     });
 
-    function setStatus(message, isError = false) {
-      saveStatus.textContent = message;
-      saveStatus.classList.toggle("error", isError);
-      saveStatus.classList.toggle("success", !isError && !!message);
+    function clearStatusMessage() {
+      saveStatus.textContent = "";
+      saveStatus.classList.remove("error", "success");
+    }
+
+    function setStatus(message, isError = false, autoClearMs = 0) {
+      if (statusClearTimer) {
+        clearTimeout(statusClearTimer);
+        statusClearTimer = null;
+      }
+
+      saveStatus.textContent = message || "";
+      saveStatus.classList.toggle("error", !!message && isError);
+      saveStatus.classList.toggle("success", !!message && !isError);
+
+      if (message && autoClearMs > 0) {
+        statusClearTimer = setTimeout(() => {
+          clearStatusMessage();
+        }, autoClearMs);
+      }
     }
 
     function clampPanelWidth(width) {
@@ -345,6 +395,243 @@
       toolEmptyState.hidden = false;
     }
 
+    function buildLyricsFromSections() {
+      if (!sections.length) return lyricsInput.value.trim();
+
+      return sections
+        .map((section, index) => {
+          const countForType = sections
+            .slice(0, index + 1)
+            .filter((item) => item.type === section.type).length;
+
+          const label = `[${section.type} ${countForType}]`;
+          const text = section.text.trim();
+
+          return text ? `${label}\n${text}` : `${label}`;
+        })
+        .join("\n\n")
+        .trim();
+    }
+
+    function syncLyricsFromSections() {
+      const currentStart = lyricsInput.selectionStart || 0;
+      const currentEnd = lyricsInput.selectionEnd || 0;
+      lyricsInput.value = buildLyricsFromSections();
+      const nextCursor = Math.min(lyricsInput.value.length, currentStart);
+      lyricsInput.setSelectionRange(nextCursor, Math.min(lyricsInput.value.length, currentEnd));
+      rememberSelection();
+    }
+
+    function createSection(type) {
+      sections.push({
+        id: nextSectionId++,
+        type,
+        text: ""
+      });
+
+      renderSections();
+      syncLyricsFromSections();
+      setStatus(`${type} section added.`, false, 2200);
+    }
+
+    function updateSectionText(id, value) {
+      const section = sections.find((item) => item.id === id);
+      if (!section) return;
+      section.text = value;
+      syncLyricsFromSections();
+    }
+
+    function removeSection(id) {
+      sections = sections.filter((item) => item.id !== id);
+      renderSections();
+      syncLyricsFromSections();
+      setStatus("Section removed.", false, 2200);
+    }
+
+    function moveSection(id, direction) {
+      const index = sections.findIndex((item) => item.id === id);
+      if (index === -1) return;
+
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+      const temp = sections[index];
+      sections[index] = sections[targetIndex];
+      sections[targetIndex] = temp;
+
+      renderSections();
+      syncLyricsFromSections();
+    }
+
+    function renderSections() {
+      sectionsEmptyState.hidden = sections.length > 0;
+      sectionsList.innerHTML = "";
+
+      sections.forEach((section, index) => {
+        const duplicateCount = sections
+          .slice(0, index + 1)
+          .filter((item) => item.type === section.type).length;
+
+        const card = document.createElement("article");
+        card.className = "section-card";
+        card.draggable = true;
+        card.dataset.sectionId = String(section.id);
+
+        card.innerHTML = `
+          <div class="section-card-head">
+            <div class="section-card-title-group">
+              <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+              <div>
+                <p class="section-card-kicker">Section</p>
+                <h4>${escapeHtml(section.type)} ${duplicateCount}</h4>
+              </div>
+            </div>
+
+            <div class="section-card-actions">
+              <button type="button" class="ghost-btn small-btn" data-action="up">↑</button>
+              <button type="button" class="ghost-btn small-btn" data-action="down">↓</button>
+              <button type="button" class="ghost-btn small-btn" data-action="delete">Delete</button>
+            </div>
+          </div>
+
+          <textarea
+            class="section-textarea"
+            placeholder="Write ${escapeHtml(section.type.toLowerCase())} lyrics here..."
+          >${escapeHtml(section.text)}</textarea>
+        `;
+
+        const textarea = card.querySelector(".section-textarea");
+        textarea.addEventListener("input", (event) => {
+          updateSectionText(section.id, event.target.value);
+        });
+
+        card.querySelector('[data-action="up"]').addEventListener("click", () => moveSection(section.id, "up"));
+        card.querySelector('[data-action="down"]').addEventListener("click", () => moveSection(section.id, "down"));
+        card.querySelector('[data-action="delete"]').addEventListener("click", () => removeSection(section.id));
+
+        card.addEventListener("dragstart", () => {
+          draggingSectionId = section.id;
+          card.classList.add("is-dragging");
+        });
+
+        card.addEventListener("dragend", () => {
+          draggingSectionId = null;
+          card.classList.remove("is-dragging");
+          sectionsList.querySelectorAll(".section-card").forEach((item) => {
+            item.classList.remove("drag-over");
+          });
+        });
+
+        card.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          const currentCard = event.currentTarget;
+          if (!currentCard || Number(currentCard.dataset.sectionId) === draggingSectionId) return;
+
+          sectionsList.querySelectorAll(".section-card").forEach((item) => {
+            item.classList.remove("drag-over");
+          });
+
+          currentCard.classList.add("drag-over");
+        });
+
+        card.addEventListener("drop", (event) => {
+          event.preventDefault();
+          const targetId = Number(event.currentTarget.dataset.sectionId);
+          if (!draggingSectionId || draggingSectionId === targetId) return;
+
+          const fromIndex = sections.findIndex((item) => item.id === draggingSectionId);
+          const toIndex = sections.findIndex((item) => item.id === targetId);
+          if (fromIndex === -1 || toIndex === -1) return;
+
+          const [movedSection] = sections.splice(fromIndex, 1);
+          sections.splice(toIndex, 0, movedSection);
+
+          renderSections();
+          syncLyricsFromSections();
+          setStatus("Section order updated.", false, 2200);
+        });
+
+        sectionsList.appendChild(card);
+      });
+    }
+
+    function parseSectionsFromLyrics(text) {
+      const lines = String(text || "").split(/\r?\n/);
+      const headerRegex = /^\s*\[(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)(?:\s+\d+)?\]\s*$/i;
+
+      const parsed = [];
+      let current = null;
+
+      for (const rawLine of lines) {
+        const trimmed = rawLine.trim();
+        const headerMatch = trimmed.match(headerRegex);
+
+        if (headerMatch) {
+          if (current) {
+            current.text = current.lines.join("\n").trim();
+            delete current.lines;
+            parsed.push(current);
+          }
+
+          let type = headerMatch[1];
+          if (/^pre chorus$/i.test(type) || /^pre-chorus$/i.test(type)) {
+            type = "Pre-Chorus";
+          } else {
+            type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+          }
+
+          current = {
+            id: nextSectionId++,
+            type,
+            lines: []
+          };
+          continue;
+        }
+
+        if (!current) {
+          current = {
+            id: nextSectionId++,
+            type: "Verse",
+            lines: []
+          };
+        }
+
+        current.lines.push(rawLine);
+      }
+
+      if (current) {
+        current.text = current.lines.join("\n").trim();
+        delete current.lines;
+        parsed.push(current);
+      }
+
+      return parsed.filter((item) => item.text || item.type);
+    }
+
+    lyricsInput.addEventListener("blur", () => {
+      const text = lyricsInput.value.trim();
+
+      if (!text) {
+        if (sections.length) {
+          sections = [];
+          renderSections();
+        }
+        return;
+      }
+
+      const parsed = parseSectionsFromLyrics(text);
+      if (parsed.length) {
+        sections = parsed;
+        renderSections();
+      }
+    });
+
+    addSectionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        createSection(button.dataset.type);
+      });
+    });
+
     function getSelectionOrLastWord() {
       const selected = lyricsInput.value
         .slice(lastSelectionStart, lastSelectionEnd)
@@ -364,27 +651,13 @@
 
     function insertWordIntoEditor(word) {
       const value = lyricsInput.value;
-      const hasTrackedCaret = typeof lastSelectionStart === "number" && typeof lastSelectionEnd === "number";
+      const start = typeof lastSelectionStart === "number" ? lastSelectionStart : value.length;
+      const end = typeof lastSelectionEnd === "number" ? lastSelectionEnd : value.length;
 
-      if (!hasTrackedCaret) {
-        lyricsInput.value = value + (value && !value.endsWith(" ") ? " " : "") + word;
-        lyricsInput.focus();
-        const cursor = lyricsInput.value.length;
-        lyricsInput.setSelectionRange(cursor, cursor);
-        rememberSelection();
-        return;
-      }
+      const insertionPrefix = start > 0 && !/\s/.test(value[start - 1]) ? " " : "";
+      const insertionSuffix = start === end && end < value.length && !/\s/.test(value[end]) ? " " : "";
 
-      const start = lastSelectionStart;
-      const end = lastSelectionEnd;
-
-      const insertionPrefix =
-        start > 0 && !/\s/.test(value[start - 1]) ? " " : "";
-
-      const insertionSuffix =
-        start === end && end < value.length && !/\s/.test(value[end]) ? " " : "";
-
-      const newValue =
+      lyricsInput.value =
         value.slice(0, start) +
         insertionPrefix +
         word +
@@ -392,10 +665,15 @@
         value.slice(end);
 
       const cursor = start + insertionPrefix.length + word.length + insertionSuffix.length;
-      lyricsInput.value = newValue;
       lyricsInput.focus();
       lyricsInput.setSelectionRange(cursor, cursor);
       rememberSelection();
+
+      const parsed = parseSectionsFromLyrics(lyricsInput.value);
+      if (parsed.length) {
+        sections = parsed;
+        renderSections();
+      }
     }
 
     function getFallbackRhymes(word) {
@@ -430,12 +708,12 @@
               <button
                 type="button"
                 class="chip-btn"
-                ondblclick="insertToolWord(${JSON.stringify(word)})"
-                title="Double-click to insert"
+                onclick="insertToolWord(${JSON.stringify(word)})"
+                title="Click to insert"
               >${escapeHtml(word)}</button>
             `).join("")}
           </div>
-          <p class="empty-copy">Double-click a word to insert it into the editor.</p>
+          <p class="empty-copy">Click a word to insert it into the editor.</p>
         `
       );
     }
@@ -453,13 +731,13 @@
                 <button
                   type="button"
                   class="chip-btn"
-                  ondblclick="insertToolWord(${JSON.stringify(item)})"
-                  title="Double-click to insert"
+                  onclick="insertToolWord(${JSON.stringify(item)})"
+                  title="Click to insert"
                 >${escapeHtml(item)}</button>
               `).join("")}
             </div>
           </div>
-          <p class="empty-copy">Double-click a word to insert it into the editor.</p>
+          <p class="empty-copy">Click a word to insert it into the editor.</p>
         `
       );
     }
@@ -565,7 +843,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.details || data.error || "Could not load song.", true);
+          setStatus(data.details || data.error || "Could not load song.", true, 3500);
           return;
         }
 
@@ -574,23 +852,30 @@
         lyricsInput.value = data.song.lyrics || "";
         isPublic.checked = !!data.song.is_public;
 
-        setStatus(`Loaded "${data.song.title}".`);
+        const parsed = parseSectionsFromLyrics(data.song.lyrics || "");
+        sections = parsed.length ? parsed : [];
+        renderSections();
+
+        setStatus(`Loaded "${data.song.title}".`, false, 2800);
         openPanel("library");
       } catch (error) {
-        setStatus("Could not load song.", true);
+        setStatus("Could not load song.", true, 3500);
       }
     }
 
     async function saveSong() {
       const title = songTitle.value.trim();
-      const lyrics = lyricsInput.value;
+      const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
       const publicValue = isPublic.checked;
 
       if (!title) {
-        setStatus("Please enter a song title.", true);
+        setStatus("Please enter a song title before saving.", true, 4000);
         songTitle.focus();
         return;
       }
+
+      lyricsInput.value = lyrics;
+      setStatus("Saving song...", false);
 
       try {
         const url = currentSongId ? `/api/songs/${currentSongId}` : "/api/songs";
@@ -609,7 +894,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.details || data.error || "Could not save song.", true);
+          setStatus(data.details || data.error || "Could not save song.", true, 5000);
           return;
         }
 
@@ -617,10 +902,10 @@
           currentSongId = data.songId;
         }
 
-        setStatus(data.message || "Song saved.");
         await loadSongs();
+        setStatus(`✓ Song saved successfully: "${title}"`, false, 4500);
       } catch (error) {
-        setStatus("Could not save song.", true);
+        setStatus("Could not save song.", true, 5000);
       }
     }
 
@@ -636,7 +921,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          setStatus(data.details || data.error || "Could not delete song.", true);
+          setStatus(data.details || data.error || "Could not delete song.", true, 4000);
           return;
         }
 
@@ -645,14 +930,16 @@
           songTitle.value = "";
           lyricsInput.value = "";
           isPublic.checked = false;
+          sections = [];
+          renderSections();
           analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
           hideToolResults();
         }
 
-        setStatus("Song deleted.");
+        setStatus("Song deleted.", false, 2800);
         await loadSongs();
       } catch (error) {
-        setStatus("Could not delete song.", true);
+        setStatus("Could not delete song.", true, 4000);
       }
     }
 
@@ -661,13 +948,16 @@
       songTitle.value = "";
       lyricsInput.value = "";
       isPublic.checked = false;
+      sections = [];
+      renderSections();
       analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
       hideToolResults();
-      setStatus("Ready for a new song.");
+      clearStatusMessage();
     }
 
     async function analyzeLyrics() {
-      const lyrics = lyricsInput.value;
+      const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
+      lyricsInput.value = lyrics;
 
       try {
         const response = await fetch("/api/analyze", {
@@ -705,7 +995,7 @@
 
           <div class="analysis-card">
             <h3>Detected sections</h3>
-            <p>${data.detectedSections.length ? data.detectedSections.map(escapeHtml).join(", ") : "None detected"}</p>
+            <p>${data.detectedSections && data.detectedSections.length ? data.detectedSections.map(escapeHtml).join(", ") : "None detected"}</p>
           </div>
 
           <div class="analysis-card">
@@ -766,9 +1056,9 @@
         const fallback = getFallbackRhymes(sourceWord);
         renderRhymeResults(sourceWord, fallback);
         if (!fallback.length) {
-          setStatus("No rhyme suggestions found.", true);
+          setStatus("No rhyme suggestions found.", true, 3500);
         } else {
-          setStatus("Using fallback rhyme ideas.", true);
+          setStatus("Using fallback rhyme ideas.", true, 3000);
         }
       }
     }
@@ -797,7 +1087,7 @@
         renderRandomResults(items);
       } catch (error) {
         renderRandomResults(getFallbackRandomItems());
-        setStatus("Using fallback random ideas.", true);
+        setStatus("Using fallback random ideas.", true, 3000);
       }
     }
 
@@ -809,6 +1099,7 @@
 
     loadSongs();
     collapsePanel();
+    renderSections();
 
     window.openSong = openSong;
     window.deleteSong = deleteSong;
