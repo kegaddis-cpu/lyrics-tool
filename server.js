@@ -1,9 +1,15 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const mysql = require("mysql2/promise");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === "production";
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -18,23 +24,57 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false,
+      secure: isProduction,
       httpOnly: true,
       sameSite: "lax"
     }
   })
 );
 
-// In-memory data store
-let songs = [];
-let nextSongId = 1;
+const db = mysql.createPool({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 3306),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-// Demo auth/session bootstrap
-app.use((req, res, next) => {
-  if (!req.session.username) {
-    req.session.username = "MonkeyMan";
+let songsTableReady = false;
+
+async function ensureSongsTable() {
+  if (songsTableReady) return;
+
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS songs (
+      id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(255) NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      lyrics LONGTEXT,
+      is_public TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )
+  `);
+
+  songsTableReady = true;
+}
+
+app.use(async (req, res, next) => {
+  try {
+    await ensureSongsTable();
+
+    if (!req.session.username) {
+      req.session.username = "MonkeyMan";
+    }
+
+    next();
+  } catch (error) {
+    console.error("Startup middleware error:", error);
+    res.status(500).send("Database setup failed.");
   }
-  next();
 });
 
 app.get("/", (req, res) => {
@@ -51,84 +91,153 @@ app.post("/logout", (req, res) => {
   });
 });
 
-app.get("/api/songs", (req, res) => {
-  res.json({ songs });
+app.get("/api/songs", async (req, res) => {
+  try {
+    const username = req.session.username;
+
+    const [rows] = await db.query(
+      `
+      SELECT id, title, lyrics, is_public
+      FROM songs
+      WHERE username = ?
+      ORDER BY updated_at DESC, id DESC
+      `,
+      [username]
+    );
+
+    res.json({ songs: rows });
+  } catch (error) {
+    console.error("GET /api/songs error:", error);
+    res.status(500).json({ error: "Failed to load songs." });
+  }
 });
 
-app.get("/api/songs/:id", (req, res) => {
-  const songId = Number(req.params.id);
-  const song = songs.find((item) => item.id === songId);
+app.get("/api/songs/:id", async (req, res) => {
+  try {
+    const songId = Number(req.params.id);
+    const username = req.session.username;
 
-  if (!song) {
-    return res.status(404).json({ error: "Song not found." });
+    if (!Number.isFinite(songId)) {
+      return res.status(400).json({ error: "Invalid song id." });
+    }
+
+    const [rows] = await db.query(
+      `
+      SELECT id, title, lyrics, is_public
+      FROM songs
+      WHERE id = ? AND username = ?
+      LIMIT 1
+      `,
+      [songId, username]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    return res.json({ song: rows[0] });
+  } catch (error) {
+    console.error("GET /api/songs/:id error:", error);
+    return res.status(500).json({ error: "Failed to load song." });
   }
-
-  return res.json({ song });
 });
 
-app.post("/api/songs", (req, res) => {
-  const title = String(req.body.title || "").trim();
-  const lyrics = String(req.body.lyrics || "");
-  const isPublic = !!req.body.is_public;
+app.post("/api/songs", async (req, res) => {
+  try {
+    const username = req.session.username;
+    const title = String(req.body.title || "").trim();
+    const lyrics = String(req.body.lyrics || "");
+    const isPublic = req.body.is_public ? 1 : 0;
 
-  if (!title) {
-    return res.status(400).json({ error: "Title is required." });
+    if (!title) {
+      return res.status(400).json({ error: "Title is required." });
+    }
+
+    const [result] = await db.query(
+      `
+      INSERT INTO songs (username, title, lyrics, is_public)
+      VALUES (?, ?, ?, ?)
+      `,
+      [username, title, lyrics, isPublic]
+    );
+
+    return res.json({
+      message: "Song saved successfully.",
+      songId: result.insertId
+    });
+  } catch (error) {
+    console.error("POST /api/songs error:", error);
+    return res.status(500).json({ error: "Failed to save song." });
   }
-
-  const newSong = {
-    id: nextSongId++,
-    title,
-    lyrics,
-    is_public: isPublic
-  };
-
-  songs.unshift(newSong);
-
-  return res.json({
-    message: "Song saved successfully.",
-    songId: newSong.id
-  });
 });
 
-app.put("/api/songs/:id", (req, res) => {
-  const songId = Number(req.params.id);
-  const song = songs.find((item) => item.id === songId);
+app.put("/api/songs/:id", async (req, res) => {
+  try {
+    const songId = Number(req.params.id);
+    const username = req.session.username;
+    const title = String(req.body.title || "").trim();
+    const lyrics = String(req.body.lyrics || "");
+    const isPublic = req.body.is_public ? 1 : 0;
 
-  if (!song) {
-    return res.status(404).json({ error: "Song not found." });
+    if (!Number.isFinite(songId)) {
+      return res.status(400).json({ error: "Invalid song id." });
+    }
+
+    if (!title) {
+      return res.status(400).json({ error: "Title is required." });
+    }
+
+    const [result] = await db.query(
+      `
+      UPDATE songs
+      SET title = ?, lyrics = ?, is_public = ?
+      WHERE id = ? AND username = ?
+      `,
+      [title, lyrics, isPublic, songId, username]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    return res.json({
+      message: "Song updated successfully.",
+      songId
+    });
+  } catch (error) {
+    console.error("PUT /api/songs/:id error:", error);
+    return res.status(500).json({ error: "Failed to update song." });
   }
-
-  const title = String(req.body.title || "").trim();
-  const lyrics = String(req.body.lyrics || "");
-  const isPublic = !!req.body.is_public;
-
-  if (!title) {
-    return res.status(400).json({ error: "Title is required." });
-  }
-
-  song.title = title;
-  song.lyrics = lyrics;
-  song.is_public = isPublic;
-
-  return res.json({
-    message: "Song updated successfully.",
-    songId: song.id
-  });
 });
 
-app.delete("/api/songs/:id", (req, res) => {
-  const songId = Number(req.params.id);
-  const existingIndex = songs.findIndex((item) => item.id === songId);
+app.delete("/api/songs/:id", async (req, res) => {
+  try {
+    const songId = Number(req.params.id);
+    const username = req.session.username;
 
-  if (existingIndex === -1) {
-    return res.status(404).json({ error: "Song not found." });
+    if (!Number.isFinite(songId)) {
+      return res.status(400).json({ error: "Invalid song id." });
+    }
+
+    const [result] = await db.query(
+      `
+      DELETE FROM songs
+      WHERE id = ? AND username = ?
+      `,
+      [songId, username]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Song not found." });
+    }
+
+    return res.json({
+      message: "Song deleted successfully."
+    });
+  } catch (error) {
+    console.error("DELETE /api/songs/:id error:", error);
+    return res.status(500).json({ error: "Failed to delete song." });
   }
-
-  songs.splice(existingIndex, 1);
-
-  return res.json({
-    message: "Song deleted successfully."
-  });
 });
 
 app.post("/api/analyze", (req, res) => {
@@ -144,7 +253,8 @@ app.post("/api/analyze", (req, res) => {
     : "0.0";
 
   const detectedSections = [];
-  const sectionMatches = lyrics.match(/^(verse|chorus|bridge|hook|intro|outro)[^\n]*$/gim) || [];
+  const sectionMatches =
+    lyrics.match(/^\[(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)[^\n]*\]$/gim) || [];
 
   sectionMatches.forEach((section) => {
     const normalized = section.trim();
