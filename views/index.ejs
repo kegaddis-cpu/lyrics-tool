@@ -1,11 +1,10 @@
-<!-- === START: views/index.ejs === -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=13" />
+  <link rel="stylesheet" href="/style.css?v=14" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -43,7 +42,6 @@
               </p>
             </div>
 
-            <!-- STATUS BANNER MOVED HERE -->
             <p id="saveStatus" class="status-line status-line-top" aria-live="polite"></p>
 
             <div class="meta-row">
@@ -345,7 +343,6 @@
       saveStatus.classList.toggle("error", !!message && isError);
       saveStatus.classList.toggle("success", !!message && !isError);
 
-      // Ensure the banner is visible when we update it
       if (message) {
         saveStatus.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
@@ -1150,4 +1147,3 @@
   </script>
 </body>
 </html>
-<!-- === END: views/index.ejs === -->
