@@ -213,6 +213,9 @@ button {
 }
 
 .status-line {
+  position: sticky;
+  top: 0;
+  z-index: 12;
   min-height: 24px;
   margin: 0;
   font-size: 0.96rem;
@@ -234,11 +237,12 @@ button {
   border-radius: 14px;
   border: 1px solid transparent;
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(8px);
 }
 
 .status-line.success {
   color: #0b5d57;
-  background: linear-gradient(180deg, rgba(15, 118, 110, 0.16), rgba(15, 118, 110, 0.08));
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.18), rgba(15, 118, 110, 0.10));
   border-color: rgba(15, 118, 110, 0.22);
 }
 
@@ -247,7 +251,6 @@ button {
   background: linear-gradient(180deg, rgba(225, 29, 72, 0.14), rgba(225, 29, 72, 0.08));
   border-color: rgba(225, 29, 72, 0.18);
 }
-
 .panel-header {
   display: grid;
   grid-template-columns: minmax(220px, 0.7fr) minmax(320px, 1.3fr);
