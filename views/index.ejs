@@ -37,8 +37,14 @@
                 <p class="panel-kicker">Editor</p>
                 <h2>Write, structure, and save</h2>
               </div>
-              <p class="panel-copy">Build songs as draggable sections, then keep the combined lyrics synced in the main editor for analysis, rhymes, and saving.</p>
+              <p class="panel-copy">
+                Build songs as draggable sections, then keep the combined lyrics synced in the main
+                editor for analysis, rhymes, and saving.
+              </p>
             </div>
+
+            <!-- STATUS BANNER MOVED HERE -->
+            <p id="saveStatus" class="status-line status-line-top" aria-live="polite"></p>
 
             <div class="meta-row">
               <div class="field-group field-grow">
@@ -66,7 +72,10 @@
                   <p class="panel-kicker">Song sections</p>
                   <h3>Arrange your structure</h3>
                 </div>
-                <p class="builder-copy">Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag them into the order you want.</p>
+                <p class="builder-copy">
+                  Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag
+                  them into the order you want.
+                </p>
               </div>
 
               <div class="section-type-row">
@@ -94,8 +103,6 @@
                 rows="20"
               ></textarea>
             </div>
-
-            <p id="saveStatus" class="status-line" aria-live="polite"></p>
           </div>
         </section>
 
@@ -111,7 +118,16 @@
 
         <div class="side-shell">
           <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-            <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
+            <button
+              id="tab-library"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-library"
+              data-panel="library"
+              tabindex="0"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
@@ -122,7 +138,16 @@
               <span class="side-tab-text">Library</span>
             </button>
 
-            <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
+            <button
+              id="tab-analysis"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-analysis"
+              data-panel="analysis"
+              tabindex="-1"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 19h16"></path>
@@ -134,7 +159,16 @@
               <span class="side-tab-text">Analysis</span>
             </button>
 
-            <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
+            <button
+              id="tab-tools"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-tools"
+              data-panel="tools"
+              tabindex="-1"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
@@ -215,7 +249,9 @@
                   </div>
 
                   <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.</p>
+                    <p class="empty-copy">
+                      Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.
+                    </p>
                   </div>
                 </div>
               </section>
@@ -273,7 +309,7 @@
     const addSectionButtons = Array.from(document.querySelectorAll(".add-section-btn"));
 
     function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, function (match) {
+      return String(str).replace(/[&<>\"']/g, function (match) {
         const map = {
           "&": "&amp;",
           "<": "&lt;",
@@ -308,6 +344,11 @@
       saveStatus.textContent = message || "";
       saveStatus.classList.toggle("error", !!message && isError);
       saveStatus.classList.toggle("success", !!message && !isError);
+
+      // Ensure the banner is visible when we update it
+      if (message) {
+        saveStatus.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
 
       if (message && autoClearMs > 0) {
         statusClearTimer = setTimeout(() => {
