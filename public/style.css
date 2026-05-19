@@ -165,6 +165,7 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 14px calc(var(--rail-width, 72px) + var(--panel-width, 0px));
   gap: 0;
+  align-items: stretch;
   transition: grid-template-columns var(--transition);
 }
 
@@ -188,7 +189,7 @@ a {
   height: 100%;
   min-height: 720px;
   padding: 28px;
-  padding-bottom: calc(var(--floating-bar-height) + 40px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--floating-bar-height) + 40px);
   overflow: auto;
 }
 
@@ -490,6 +491,7 @@ body.is-resizing .panel-resizer-grip {
   min-width: 0;
   display: grid;
   grid-template-columns: var(--rail-width, 72px) minmax(0, var(--panel-width, 0px));
+  align-self: stretch;
 }
 
 .side-tab-rail {
@@ -774,7 +776,7 @@ body.is-resizing .panel-resizer-grip {
 .floating-action-bar {
   position: fixed;
   left: 50%;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  bottom: 20px;
   transform: translateX(-50%);
   z-index: 1200;
   display: flex;
@@ -796,43 +798,12 @@ body.is-resizing .panel-resizer-grip {
 .floating-action-bar .ghost-btn,
 .floating-action-bar .accent-btn {
   flex: 1 1 0;
-  min-height: 48px;
   min-width: 0;
+  min-height: 48px;
 }
 
 [hidden] {
   display: none !important;
-}
-
-@media (max-width: 960px) {
-  .floating-action-bar {
-    width: calc(100% - 24px);
-    gap: 10px;
-    padding: 12px;
-  }
-}
-
-@media (max-width: 640px) {
-  :root {
-    --floating-bar-height: 150px;
-  }
-
-  .floating-action-bar {
-    left: 12px;
-    right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-    transform: none;
-    width: auto;
-    flex-wrap: wrap;
-    justify-content: stretch;
-  }
-
-  .floating-action-bar .primary-btn,
-  .floating-action-bar .secondary-btn,
-  .floating-action-bar .ghost-btn,
-  .floating-action-bar .accent-btn {
-    flex: 1 1 calc(50% - 10px);
-  }
 }
 
 public/style.css
