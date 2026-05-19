@@ -27,7 +27,6 @@
   --radius-sm: 10px;
   --rail-width: 72px;
   --panel-width: 0px;
-  --topbar-height: 112px;
   --floating-bar-height: 88px;
   --transition: 180ms ease;
   --font-stack: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -515,7 +514,6 @@ body.is-resizing .panel-resizer-grip {
 .side-tab-rail {
   border: 1px solid var(--border);
   border-left: none;
-  border-radius: 0;
   background: linear-gradient(180deg, rgba(12, 18, 36, 0.96), rgba(10, 15, 28, 0.98));
   display: flex;
   flex-direction: column;
@@ -674,7 +672,6 @@ body.is-resizing .panel-resizer-grip {
   gap: 10px;
 }
 
-.tool-action-grid,
 .tool-row,
 .tool-chip-list {
   display: flex;
@@ -682,7 +679,6 @@ body.is-resizing .panel-resizer-grip {
   gap: 10px;
 }
 
-.tool-action-btn,
 .tool-btn {
   min-width: 110px;
 }
