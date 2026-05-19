@@ -170,16 +170,12 @@ a {
   width: 100%;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(700px, 1fr) 14px calc(var(--rail-width, 72px) + var(--panel-width, 0px));
-  grid-template-areas: "editor resize side";
-  gap: 0;
+  grid-template-columns: minmax(700px, 1fr) 14px calc(var(--rail-width) + var(--panel-width));
   align-items: stretch;
-  overflow: visible;
-  transition: grid-template-columns var(--transition);
 }
 
 .workspace-layout.is-collapsed {
-  grid-template-columns: minmax(700px, 1fr) 0 calc(var(--rail-width, 72px));
+  grid-template-columns: minmax(700px, 1fr) 0 var(--rail-width);
 }
 
 .panel {
@@ -190,10 +186,10 @@ a {
 }
 
 .panel-editor {
-  grid-area: editor;
   min-width: 0;
   min-height: 780px;
   border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  overflow: hidden;
 }
 
 .editor-scroll {
@@ -472,7 +468,6 @@ textarea {
 }
 
 .panel-resizer {
-  grid-area: resize;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -501,19 +496,22 @@ body.is-resizing .panel-resizer-grip {
 }
 
 .side-shell {
-  grid-area: side;
   min-width: 0;
   min-height: 780px;
   height: 100%;
-  display: grid;
-  grid-template-columns: var(--rail-width, 72px) minmax(0, var(--panel-width, 0px));
-  grid-template-rows: 1fr;
-  align-self: stretch;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
 }
 
 .side-tab-rail {
+  width: var(--rail-width);
+  min-width: var(--rail-width);
+  max-width: var(--rail-width);
   border: 1px solid var(--border);
   border-left: none;
+  border-right: none;
   background: linear-gradient(180deg, rgba(12, 18, 36, 0.96), rgba(10, 15, 28, 0.98));
   display: flex;
   flex-direction: column;
@@ -521,10 +519,13 @@ body.is-resizing .panel-resizer-grip {
   gap: 10px;
   padding: 14px 10px;
   min-height: 100%;
+  flex-shrink: 0;
 }
 
 .side-panel {
-  min-width: 0;
+  width: var(--panel-width);
+  min-width: var(--panel-width);
+  max-width: var(--panel-width);
   min-height: 780px;
   height: 100%;
   border-left: none;
@@ -532,9 +533,14 @@ body.is-resizing .panel-resizer-grip {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .workspace-layout.is-collapsed .side-panel {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  border-width: 0;
   visibility: hidden;
 }
 
@@ -832,9 +838,12 @@ body.is-resizing .panel-resizer-grip {
     min-width: 1100px;
   }
 
-  .workspace-layout,
+  .workspace-layout {
+    grid-template-columns: minmax(620px, 1fr) 14px calc(var(--rail-width) + var(--panel-width));
+  }
+
   .workspace-layout.is-collapsed {
-    grid-template-columns: minmax(620px, 1fr) 14px calc(var(--rail-width, 72px) + var(--panel-width, 0px));
+    grid-template-columns: minmax(620px, 1fr) 0 var(--rail-width);
   }
 }
 
