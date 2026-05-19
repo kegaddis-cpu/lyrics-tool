@@ -6,7 +6,7 @@ views/index.ejs
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=15" />
+  <link rel="stylesheet" href="/style.css?v=16" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -46,12 +46,7 @@ views/index.ejs
             <div class="meta-row">
               <div class="field-group field-grow">
                 <label for="songTitle">Song title</label>
-                <input
-                  type="text"
-                  id="songTitle"
-                  placeholder="Enter a title"
-                  maxlength="255"
-                />
+                <input type="text" id="songTitle" placeholder="Enter a title" maxlength="255" />
               </div>
 
               <label class="toggle-card" for="isPublic">
@@ -274,7 +269,7 @@ views/index.ejs
   </div>
 
   <div class="floating-action-bar">
-    <button id="analyzeBtn" type="button" class="primary-btn">Analysis</button>
+    <button id="analyzeFloatingBtn" type="button" class="primary-btn">Analyze</button>
     <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
     <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
   </div>
@@ -302,7 +297,7 @@ views/index.ejs
     const songTitle = document.getElementById("songTitle");
     const isPublic = document.getElementById("isPublic");
 
-    const analyzeBtn = document.getElementById("analyzeBtn");
+    const analyzeFloatingBtn = document.getElementById("analyzeFloatingBtn");
     const saveSongBtn = document.getElementById("saveSongBtn");
     const newSongBtn = document.getElementById("newSongBtn");
     const rhymingBtn = document.getElementById("rhymingBtn");
@@ -674,10 +669,7 @@ views/index.ejs
     });
 
     function getSelectionOrLastWord() {
-      const selected = lyricsInput.value
-        .slice(lastSelectionStart, lastSelectionEnd)
-        .trim()
-        .toLowerCase();
+      const selected = lyricsInput.value.slice(lastSelectionStart, lastSelectionEnd).trim().toLowerCase();
 
       if (selected && /[a-zA-Z]/.test(selected)) return selected;
 
@@ -711,10 +703,10 @@ views/index.ejs
 
     function getFallbackRhymes(word) {
       const fallbackMap = {
-        here: ["fear", "dear", "near", "clear", "year"],
-        night: ["light", "bright", "sight", "flight", "might"],
-        fire: ["desire", "higher", "wire", "choir", "spire"],
-        pain: ["rain", "train", "chain", "vein", "gain"]
+        here: ["fear", "dear", "near", "beer", "clear", "year"],
+        night: ["light", "bright", "sight", "flight", "white", "might"],
+        fire: ["desire", "higher", "wire", "choir", "liar", "spire"],
+        pain: ["rain", "train", "chain", "vein", "gain", "again"]
       };
       return fallbackMap[word] || [];
     }
@@ -1088,7 +1080,7 @@ views/index.ejs
       }
     }
 
-    analyzeBtn.addEventListener("click", analyzeLyrics);
+    analyzeFloatingBtn.addEventListener("click", analyzeLyrics);
     saveSongBtn.addEventListener("click", saveSong);
     newSongBtn.addEventListener("click", resetEditor);
     rhymingBtn.addEventListener("click", showRhymes);
