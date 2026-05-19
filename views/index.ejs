@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=21" />
+  <link rel="stylesheet" href="/style.css?v=22" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -59,6 +59,12 @@
               </label>
             </div>
 
+            <div class="floating-song-actions">
+              <button id="analyzeBtn" type="button" class="primary-btn floating-action-btn">Analyze</button>
+              <button id="saveSongBtn" type="button" class="accent-btn floating-action-btn">Save Song</button>
+              <button id="newSongBtn" type="button" class="secondary-btn floating-action-btn">New Song</button>
+            </div>
+
             <section class="section-builder-card">
               <div class="section-builder-head">
                 <div>
@@ -95,12 +101,6 @@
             </div>
 
             <p id="saveStatus" class="status-line" aria-live="polite"></p>
-
-            <div class="floating-song-actions">
-              <button id="analyzeBtn" type="button" class="primary-btn floating-action-btn">Analyze</button>
-              <button id="saveSongBtn" type="button" class="accent-btn floating-action-btn">Save Song</button>
-              <button id="newSongBtn" type="button" class="secondary-btn floating-action-btn">New Song</button>
-            </div>
           </div>
         </section>
 
@@ -853,6 +853,7 @@
         renderSections();
 
         setStatus(`Loaded "${data.song.title}".`, false, 2800);
+        openPanel("library");
       } catch (error) {
         setStatus("Could not load song.", true, 3500);
       }
