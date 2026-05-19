@@ -6,7 +6,7 @@ views/index.ejs
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=14" />
+  <link rel="stylesheet" href="/style.css?v=15" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -19,7 +19,7 @@ views/index.ejs
         </div>
 
         <div class="topbar-actions">
-          <p class="version-pill">Version: <%= pageVersion %></p>
+          <p class="version-pill">Version <%= pageVersion %></p>
           <form action="/logout" method="POST">
             <button type="submit" class="ghost-btn">Logout</button>
           </form>
@@ -29,7 +29,7 @@ views/index.ejs
       <main
         class="workspace-layout is-collapsed"
         id="workspaceLayout"
-        style="--panel-width: 360px; --rail-width: <%= railWidth || '72px' %>;"
+        style="--panel-width: 360px; --rail-width: <%= railWidth || 72 %>px;"
       >
         <section class="panel panel-editor">
           <div class="editor-scroll">
@@ -38,7 +38,9 @@ views/index.ejs
                 <p class="panel-kicker">Editor</p>
                 <h2>Write, structure, and save</h2>
               </div>
-              <p class="panel-copy">Build songs as draggable sections, then keep the combined lyrics synced in the main editor for analysis, rhymes, and saving.</p>
+              <p class="panel-copy">
+                Build songs as draggable sections, then keep the combined lyrics synced in the main editor for analysis, rhymes, and saving.
+              </p>
             </div>
 
             <div class="meta-row">
@@ -67,17 +69,19 @@ views/index.ejs
                   <p class="panel-kicker">Song sections</p>
                   <h3>Arrange your structure</h3>
                 </div>
-                <p class="builder-copy">Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag them into the order you want.</p>
+                <p class="builder-copy">
+                  Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag them into the order you want.
+                </p>
               </div>
 
               <div class="section-type-row">
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">Verse</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">Pre-Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">Bridge</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">Hook</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">Intro</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">Outro</button>
               </div>
 
               <div id="sectionsList" class="sections-list"></div>
@@ -112,7 +116,16 @@ views/index.ejs
 
         <div class="side-shell">
           <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-            <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
+            <button
+              id="tab-library"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-library"
+              data-panel="library"
+              tabindex="0"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
@@ -123,7 +136,16 @@ views/index.ejs
               <span class="side-tab-text">Library</span>
             </button>
 
-            <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
+            <button
+              id="tab-analysis"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-analysis"
+              data-panel="analysis"
+              tabindex="-1"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 19h16"></path>
@@ -135,7 +157,16 @@ views/index.ejs
               <span class="side-tab-text">Analysis</span>
             </button>
 
-            <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
+            <button
+              id="tab-tools"
+              class="side-tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-tools"
+              data-panel="tools"
+              tabindex="-1"
+            >
               <span class="side-tab-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
@@ -154,51 +185,64 @@ views/index.ejs
             </div>
 
             <div class="side-panel-body">
-              <section id="panel-library" class="side-panel-view" role="tabpanel" aria-labelledby="tab-library" hidden>
+              <section
+                id="panel-library"
+                class="side-panel-view"
+                role="tabpanel"
+                aria-labelledby="tab-library"
+                hidden
+              >
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Library</p>
                     <h2>My songs</h2>
                   </div>
+                  <p class="drawer-copy">Load, update, and remove saved songs.</p>
                 </div>
-                <p class="drawer-copy">Load, update, and remove saved songs.</p>
+
                 <div id="songsList" class="songs-list">
                   <p class="empty-copy">Loading songs...</p>
                 </div>
               </section>
 
-              <section id="panel-analysis" class="side-panel-view" role="tabpanel" aria-labelledby="tab-analysis" hidden>
+              <section
+                id="panel-analysis"
+                class="side-panel-view"
+                role="tabpanel"
+                aria-labelledby="tab-analysis"
+                hidden
+              >
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Analysis</p>
                     <h2>Song insights</h2>
                   </div>
+                  <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
                 </div>
-                <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
+
                 <div id="analysisResults" class="analysis-results">
                   <p class="empty-copy">No analysis yet.</p>
                 </div>
               </section>
 
-              <section id="panel-tools" class="side-panel-view" role="tabpanel" aria-labelledby="tab-tools" hidden>
+              <section
+                id="panel-tools"
+                class="side-panel-view"
+                role="tabpanel"
+                aria-labelledby="tab-tools"
+                hidden
+              >
                 <div class="drawer-panel-header">
                   <div>
                     <p class="panel-kicker">Tools</p>
                     <h2>Writing tools</h2>
                   </div>
+                  <p class="drawer-copy">
+                    Use quick actions, generate rhymes, and spark ideas without crowding the editor.
+                  </p>
                 </div>
-                <p class="drawer-copy">Use quick actions, generate rhymes, and spark ideas without crowding the editor.</p>
 
                 <div class="tools-panel-body">
-                  <div class="tool-section">
-                    <p class="tool-section-label">Song actions</p>
-                    <div class="tool-action-grid">
-                      <button id="analyzeBtn" type="button" class="primary-btn tool-action-btn">Analyze</button>
-                      <button id="saveSongBtn" type="button" class="accent-btn tool-action-btn">Save Song</button>
-                      <button id="newSongBtn" type="button" class="secondary-btn tool-action-btn">New Song</button>
-                    </div>
-                  </div>
-
                   <div class="tool-section">
                     <p class="tool-section-label">Writing prompts</p>
                     <div class="tool-row tool-row-drawer">
@@ -216,7 +260,9 @@ views/index.ejs
                   </div>
 
                   <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.</p>
+                    <p class="empty-copy">
+                      Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.
+                    </p>
                   </div>
                 </div>
               </section>
@@ -225,6 +271,12 @@ views/index.ejs
         </div>
       </main>
     </div>
+  </div>
+
+  <div class="floating-action-bar">
+    <button id="analyzeBtn" type="button" class="primary-btn">Analysis</button>
+    <button id="saveSongBtn" type="button" class="accent-btn">Save Song</button>
+    <button id="newSongBtn" type="button" class="secondary-btn">New Song</button>
   </div>
 
   <script>
@@ -239,7 +291,7 @@ views/index.ejs
     const DEFAULT_PANEL_WIDTH = 360;
     const MIN_PANEL_WIDTH = 280;
     const MAX_PANEL_WIDTH = 560;
-    const RAIL_WIDTH = parseInt("<%= railWidth || '72px' %>", 10) || 72;
+    const RAIL_WIDTH = parseInt("<%= railWidth || 72 %>px", 10) || 72;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
     const panelResizeHandle = document.getElementById("panelResizeHandle");
@@ -249,11 +301,13 @@ views/index.ejs
     const lyricsInput = document.getElementById("lyricsInput");
     const songTitle = document.getElementById("songTitle");
     const isPublic = document.getElementById("isPublic");
+
     const analyzeBtn = document.getElementById("analyzeBtn");
     const saveSongBtn = document.getElementById("saveSongBtn");
     const newSongBtn = document.getElementById("newSongBtn");
     const rhymingBtn = document.getElementById("rhymingBtn");
     const randomBtn = document.getElementById("randomBtn");
+
     const analysisResults = document.getElementById("analysisResults");
     const songsList = document.getElementById("songsList");
     const saveStatus = document.getElementById("saveStatus");
@@ -262,6 +316,7 @@ views/index.ejs
     const toolResultsBody = document.getElementById("toolResultsBody");
     const closeToolResultsBtn = document.getElementById("closeToolResultsBtn");
     const toolEmptyState = document.getElementById("toolEmptyState");
+
     const sideTabs = Array.from(document.querySelectorAll(".side-tab"));
     const sidePanels = {
       library: document.getElementById("panel-library"),
@@ -306,7 +361,7 @@ views/index.ejs
         statusClearTimer = null;
       }
 
-      saveStatus.textContent = message || "";
+      saveStatus.textContent = message;
       saveStatus.classList.toggle("error", !!message && isError);
       saveStatus.classList.toggle("success", !!message && !isError);
 
@@ -324,11 +379,10 @@ views/index.ejs
     function openPanel(panelName, moveFocus = false) {
       if (workspaceLayout.classList.contains("is-collapsed")) {
         workspaceLayout.classList.remove("is-collapsed");
-      }
-
-      const currentWidth = parseInt(workspaceLayout.style.getPropertyValue("--panel-width"), 10);
-      if (!currentWidth) {
-        workspaceLayout.style.setProperty("--panel-width", `${DEFAULT_PANEL_WIDTH}px`);
+        const currentWidth = parseInt(workspaceLayout.style.getPropertyValue("--panel-width"), 10);
+        if (!currentWidth) {
+          workspaceLayout.style.setProperty("--panel-width", `${DEFAULT_PANEL_WIDTH}px`);
+        }
       }
 
       sideTabs.forEach((tab) => {
@@ -404,11 +458,9 @@ views/index.ejs
           const countForType = sections
             .slice(0, index + 1)
             .filter((item) => item.type === section.type).length;
-
-          const label = `[${section.type} ${countForType}]`;
+          const label = `${section.type} ${countForType}`;
           const text = section.text.trim();
-
-          return text ? `${label}\n${text}` : `${label}`;
+          return text ? `${label}\n${text}` : label;
         })
         .join("\n\n")
         .trim();
@@ -429,7 +481,6 @@ views/index.ejs
         type,
         text: ""
       });
-
       renderSections();
       syncLyricsFromSections();
       setStatus(`${type} section added.`, false, 2200);
@@ -487,24 +538,17 @@ views/index.ejs
                 <h4>${escapeHtml(section.type)} ${duplicateCount}</h4>
               </div>
             </div>
-
             <div class="section-card-actions">
               <button type="button" class="ghost-btn small-btn" data-action="up">↑</button>
               <button type="button" class="ghost-btn small-btn" data-action="down">↓</button>
               <button type="button" class="ghost-btn small-btn" data-action="delete">Delete</button>
             </div>
           </div>
-
-          <textarea
-            class="section-textarea"
-            placeholder="Write ${escapeHtml(section.type.toLowerCase())} lyrics here..."
-          >${escapeHtml(section.text)}</textarea>
+          <textarea class="section-textarea" placeholder="Write ${escapeHtml(section.type.toLowerCase())} lyrics here...">${escapeHtml(section.text)}</textarea>
         `;
 
         const textarea = card.querySelector(".section-textarea");
-        textarea.addEventListener("input", (event) => {
-          updateSectionText(section.id, event.target.value);
-        });
+        textarea.addEventListener("input", (event) => updateSectionText(section.id, event.target.value));
 
         card.querySelector('[data-action="up"]').addEventListener("click", () => moveSection(section.id, "up"));
         card.querySelector('[data-action="down"]').addEventListener("click", () => moveSection(section.id, "down"));
@@ -531,7 +575,6 @@ views/index.ejs
           sectionsList.querySelectorAll(".section-card").forEach((item) => {
             item.classList.remove("drag-over");
           });
-
           currentCard.classList.add("drag-over");
         });
 
@@ -544,7 +587,7 @@ views/index.ejs
           const toIndex = sections.findIndex((item) => item.id === targetId);
           if (fromIndex === -1 || toIndex === -1) return;
 
-          const [movedSection] = sections.splice(fromIndex, 1);
+          const movedSection = sections.splice(fromIndex, 1)[0];
           sections.splice(toIndex, 0, movedSection);
 
           renderSections();
@@ -557,9 +600,8 @@ views/index.ejs
     }
 
     function parseSectionsFromLyrics(text) {
-      const lines = String(text || "").split(/\r?\n/);
-      const headerRegex = /^\s*\[(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)(?:\s+\d+)?\]\s*$/i;
-
+      const lines = String(text).split(/\r?\n/);
+      const headerRegex = /^(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)\s*\d*:?$/i;
       const parsed = [];
       let current = null;
 
@@ -575,7 +617,7 @@ views/index.ejs
           }
 
           let type = headerMatch[1];
-          if (/^pre chorus$/i.test(type) || /^pre-chorus$/i.test(type)) {
+          if (/pre chorus/i.test(type) || /pre-chorus/i.test(type)) {
             type = "Pre-Chorus";
           } else {
             type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
@@ -628,9 +670,7 @@ views/index.ejs
     });
 
     addSectionButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        createSection(button.dataset.type);
-      });
+      button.addEventListener("click", () => createSection(button.dataset.type));
     });
 
     function getSelectionOrLastWord() {
@@ -639,9 +679,7 @@ views/index.ejs
         .trim()
         .toLowerCase();
 
-      if (selected && /^[a-zA-Z']+$/.test(selected)) {
-        return selected;
-      }
+      if (selected && /[a-zA-Z]/.test(selected)) return selected;
 
       const text = lyricsInput.value.trim();
       if (!text) return "";
@@ -654,16 +692,10 @@ views/index.ejs
       const value = lyricsInput.value;
       const start = typeof lastSelectionStart === "number" ? lastSelectionStart : value.length;
       const end = typeof lastSelectionEnd === "number" ? lastSelectionEnd : value.length;
-
       const insertionPrefix = start > 0 && !/\s/.test(value[start - 1]) ? " " : "";
       const insertionSuffix = start === end && end < value.length && !/\s/.test(value[end]) ? " " : "";
 
-      lyricsInput.value =
-        value.slice(0, start) +
-        insertionPrefix +
-        word +
-        insertionSuffix +
-        value.slice(end);
+      lyricsInput.value = value.slice(0, start) + insertionPrefix + word + insertionSuffix + value.slice(end);
 
       const cursor = start + insertionPrefix.length + word.length + insertionSuffix.length;
       lyricsInput.focus();
@@ -679,12 +711,11 @@ views/index.ejs
 
     function getFallbackRhymes(word) {
       const fallbackMap = {
-        here: ["fear", "dear", "near", "beer", "clear", "year"],
-        night: ["light", "bright", "sight", "flight", "white", "might"],
-        fire: ["desire", "higher", "wire", "choir", "liar", "spire"],
-        pain: ["rain", "train", "chain", "vein", "gain", "again"]
+        here: ["fear", "dear", "near", "clear", "year"],
+        night: ["light", "bright", "sight", "flight", "might"],
+        fire: ["desire", "higher", "wire", "choir", "spire"],
+        pain: ["rain", "train", "chain", "vein", "gain"]
       };
-
       return fallbackMap[word] || [];
     }
 
@@ -694,25 +725,20 @@ views/index.ejs
 
     function renderRhymeResults(sourceWord, suggestions) {
       if (!suggestions.length) {
-        showToolResults(
-          "Rhyming ideas",
-          `<p class="empty-copy">No rhyme ideas came back for "${escapeHtml(sourceWord)}".</p>`
-        );
+        showToolResults("Rhyming ideas", `<p class="empty-copy">No rhyme ideas came back for ${escapeHtml(sourceWord)}.</p>`);
         return;
       }
 
       showToolResults(
-        `Rhymes for "${sourceWord}"`,
+        `Rhymes for ${sourceWord}`,
         `
           <div class="tool-chip-list">
-            ${suggestions.map((word) => `
-              <button
-                type="button"
-                class="chip-btn"
-                onclick="insertToolWord(${JSON.stringify(word)})"
-                title="Click to insert"
-              >${escapeHtml(word)}</button>
-            `).join("")}
+            ${suggestions
+              .map(
+                (word) =>
+                  `<button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(word)})" title="Click to insert">${escapeHtml(word)}</button>`
+              )
+              .join("")}
           </div>
           <p class="empty-copy">Click a word to insert it into the editor.</p>
         `
@@ -728,14 +754,12 @@ views/index.ejs
           <div class="analysis-card">
             <h3>Try one</h3>
             <div class="tool-chip-list">
-              ${safeItems.map((item) => `
-                <button
-                  type="button"
-                  class="chip-btn"
-                  onclick="insertToolWord(${JSON.stringify(item)})"
-                  title="Click to insert"
-                >${escapeHtml(item)}</button>
-              `).join("")}
+              ${safeItems
+                .map(
+                  (item) =>
+                    `<button type="button" class="chip-btn" onclick="insertToolWord(${JSON.stringify(item)})" title="Click to insert">${escapeHtml(item)}</button>`
+                )
+                .join("")}
             </div>
           </div>
           <p class="empty-copy">Click a word to insert it into the editor.</p>
@@ -744,9 +768,7 @@ views/index.ejs
     }
 
     sideTabs.forEach((tab, index) => {
-      tab.addEventListener("click", () => {
-        togglePanel(tab.dataset.panel);
-      });
+      tab.addEventListener("click", () => togglePanel(tab.dataset.panel));
 
       tab.addEventListener("keydown", (event) => {
         let nextIndex = index;
@@ -779,7 +801,6 @@ views/index.ejs
 
     panelResizeHandle.addEventListener("mousedown", (event) => {
       if (workspaceLayout.classList.contains("is-collapsed")) return;
-
       isResizing = true;
       document.body.classList.add("is-resizing");
       event.preventDefault();
@@ -787,7 +808,6 @@ views/index.ejs
 
     window.addEventListener("mousemove", (event) => {
       if (!isResizing) return;
-
       const layoutRect = workspaceLayout.getBoundingClientRect();
       const nextWidth = clampPanelWidth(layoutRect.right - event.clientX - RAIL_WIDTH);
       workspaceLayout.style.setProperty("--panel-width", `${nextWidth}px`);
@@ -800,7 +820,7 @@ views/index.ejs
     });
 
     async function loadSongs() {
-      songsList.innerHTML = '<p class="empty-copy">Loading songs...</p>';
+      songsList.innerHTML = `<p class="empty-copy">Loading songs...</p>`;
 
       try {
         const response = await fetch("/api/songs");
@@ -812,29 +832,31 @@ views/index.ejs
         }
 
         if (!data.songs || !data.songs.length) {
-          songsList.innerHTML = '<p class="empty-copy">No songs saved yet.</p>';
+          songsList.innerHTML = `<p class="empty-copy">No songs saved yet.</p>`;
           return;
         }
 
-        songsList.innerHTML = data.songs.map((song) => `
-          <article class="song-card">
-            <div class="song-card-head">
-              <div>
-                <h3>${escapeHtml(song.title)}</h3>
-                <p>${song.is_public ? "Public" : "Private"}</p>
-              </div>
-            </div>
-
-            <p class="song-preview">${escapeHtml((song.lyrics || "").slice(0, 100)) || "No lyrics saved yet."}</p>
-
-            <div class="song-card-actions">
-              <button type="button" class="primary-btn small-btn" onclick="openSong(${song.id})">Load</button>
-              <button type="button" class="secondary-btn small-btn" onclick="deleteSong(${song.id})">Delete</button>
-            </div>
-          </article>
-        `).join("");
+        songsList.innerHTML = data.songs
+          .map(
+            (song) => `
+              <article class="song-card">
+                <div class="song-card-head">
+                  <div>
+                    <h3>${escapeHtml(song.title)}</h3>
+                    <p>${song.isPublic ? "Public" : "Private"}</p>
+                  </div>
+                </div>
+                <p class="song-preview">${escapeHtml((song.lyrics || "").slice(0, 100) || "No lyrics saved yet.")}</p>
+                <div class="song-card-actions">
+                  <button type="button" class="primary-btn small-btn" onclick="openSong(${song.id})">Load</button>
+                  <button type="button" class="secondary-btn small-btn" onclick="deleteSong(${song.id})">Delete</button>
+                </div>
+              </article>
+            `
+          )
+          .join("");
       } catch (error) {
-        songsList.innerHTML = '<p class="empty-copy">Could not load songs.</p>';
+        songsList.innerHTML = `<p class="empty-copy">Could not load songs.</p>`;
       }
     }
 
@@ -849,15 +871,15 @@ views/index.ejs
         }
 
         currentSongId = data.song.id;
-        songTitle.value = data.song.title || "";
-        lyricsInput.value = data.song.lyrics || "";
-        isPublic.checked = !!data.song.is_public;
+        songTitle.value = data.song.title;
+        lyricsInput.value = data.song.lyrics;
+        isPublic.checked = !!data.song.isPublic;
 
-        const parsed = parseSectionsFromLyrics(data.song.lyrics || "");
+        const parsed = parseSectionsFromLyrics(data.song.lyrics);
         sections = parsed.length ? parsed : [];
         renderSections();
 
-        setStatus(`Loaded "${data.song.title}".`, false, 2800);
+        setStatus(`Loaded ${data.song.title}.`, false, 2800);
         openPanel("library");
       } catch (error) {
         setStatus("Could not load song.", true, 3500);
@@ -888,7 +910,7 @@ views/index.ejs
           body: JSON.stringify({
             title,
             lyrics,
-            is_public: publicValue
+            isPublic: publicValue
           })
         });
 
@@ -899,12 +921,10 @@ views/index.ejs
           return;
         }
 
-        if (data.songId) {
-          currentSongId = data.songId;
-        }
+        if (data.songId) currentSongId = data.songId;
 
         await loadSongs();
-        setStatus(`✓ Song saved successfully: "${title}"`, false, 4500);
+        setStatus(`Song saved successfully: ${title}`, false, 4500);
       } catch (error) {
         setStatus("Could not save song.", true, 5000);
       }
@@ -933,7 +953,7 @@ views/index.ejs
           isPublic.checked = false;
           sections = [];
           renderSections();
-          analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
+          analysisResults.innerHTML = `<p class="empty-copy">No analysis yet.</p>`;
           hideToolResults();
         }
 
@@ -951,14 +971,13 @@ views/index.ejs
       isPublic.checked = false;
       sections = [];
       renderSections();
-      analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
+      analysisResults.innerHTML = `<p class="empty-copy">No analysis yet.</p>`;
       hideToolResults();
       clearStatusMessage();
     }
 
     async function analyzeLyrics() {
-      const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
-      lyricsInput.value = lyrics;
+      const lyrics = sections.length ? buildLyricsFromSections().trim() : lyricsInput.value.trim();
 
       try {
         const response = await fetch("/api/analyze", {
@@ -970,35 +989,21 @@ views/index.ejs
         const data = await response.json();
 
         if (!response.ok) {
-          analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
+          analysisResults.innerHTML = `<p class="empty-copy">Could not analyze lyrics.</p>`;
           return;
         }
 
         analysisResults.innerHTML = `
           <div class="stats-grid">
-            <div class="stat-card">
-              <span>Lines</span>
-              <strong>${data.lineCount}</strong>
-            </div>
-            <div class="stat-card">
-              <span>Words</span>
-              <strong>${data.wordCount}</strong>
-            </div>
-            <div class="stat-card">
-              <span>Avg / line</span>
-              <strong>${data.averageWordsPerLine}</strong>
-            </div>
-            <div class="stat-card">
-              <span>Sections</span>
-              <strong>${data.sectionCount}</strong>
-            </div>
+            <div class="stat-card"><span>Lines</span><strong>${data.lineCount}</strong></div>
+            <div class="stat-card"><span>Words</span><strong>${data.wordCount}</strong></div>
+            <div class="stat-card"><span>Avg line</span><strong>${data.averageWordsPerLine}</strong></div>
+            <div class="stat-card"><span>Sections</span><strong>${data.sectionCount}</strong></div>
           </div>
-
           <div class="analysis-card">
             <h3>Detected sections</h3>
             <p>${data.detectedSections && data.detectedSections.length ? data.detectedSections.map(escapeHtml).join(", ") : "None detected"}</p>
           </div>
-
           <div class="analysis-card">
             <h3>Longest line</h3>
             <p>${data.longestLine ? escapeHtml(data.longestLine) : "None"}</p>
@@ -1007,7 +1012,7 @@ views/index.ejs
 
         openPanel("analysis");
       } catch (error) {
-        analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
+        analysisResults.innerHTML = `<p class="empty-copy">Could not analyze lyrics.</p>`;
       }
     }
 
@@ -1015,17 +1020,11 @@ views/index.ejs
       const sourceWord = getSelectionOrLastWord();
 
       if (!sourceWord) {
-        showToolResults(
-          "Rhyming ideas",
-          `<p class="empty-copy">Select a word or place your cursor in the editor first.</p>`
-        );
+        showToolResults("Rhyming ideas", `<p class="empty-copy">Select a word or place your cursor in the editor first.</p>`);
         return;
       }
 
-      showToolResults(
-        "Rhyming ideas",
-        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...<\/p>`
-      );
+      showToolResults("Rhyming ideas", `<p class="empty-copy">Loading rhyme suggestions for ${escapeHtml(sourceWord)}...</p>`);
 
       try {
         const params = new URLSearchParams({ word: sourceWord });
@@ -1037,16 +1036,16 @@ views/index.ejs
         }
 
         const suggestions = Array.isArray(data.results)
-          ? data.results
-              .map((item) => typeof item === "string" ? item : item.word)
-              .filter(Boolean)
+          ? data.results.map((item) => (typeof item === "string" ? item : item.word)).filter(Boolean)
           : [];
 
-        const cleaned = [...new Set(
-          suggestions
-            .map((word) => String(word).trim().toLowerCase())
-            .filter((word) => /^[a-zA-Z']+$/.test(word) && word !== sourceWord)
-        )].slice(0, 16);
+        const cleaned = [
+          ...new Set(
+            suggestions
+              .map((word) => String(word).trim().toLowerCase())
+              .filter((word) => /[a-zA-Z]/.test(word) && word !== sourceWord)
+          )
+        ].slice(0, 16);
 
         if (!cleaned.length) {
           throw new Error("No rhyme suggestions returned.");
@@ -1056,6 +1055,7 @@ views/index.ejs
       } catch (error) {
         const fallback = getFallbackRhymes(sourceWord);
         renderRhymeResults(sourceWord, fallback);
+
         if (!fallback.length) {
           setStatus("No rhyme suggestions found.", true, 3500);
         } else {
@@ -1065,10 +1065,7 @@ views/index.ejs
     }
 
     async function showRandomIdeas() {
-      showToolResults(
-        "Random writing ideas",
-        `<p class="empty-copy">Loading random ideas...</p>`
-      );
+      showToolResults("Random writing ideas", `<p class="empty-copy">Loading random ideas...</p>`);
 
       try {
         const params = new URLSearchParams({ mode: "word" });
@@ -1079,8 +1076,7 @@ views/index.ejs
           throw new Error(data.details || data.error || "Could not fetch random ideas.");
         }
 
-        const items = data.result ? [data.result] : [];
-
+        const items = data.result ? data.result : [];
         if (!items.length) {
           throw new Error("No random ideas returned.");
         }
