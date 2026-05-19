@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=20" />
+  <link rel="stylesheet" href="/style.css?v=21" />
 </head>
 <body>
   <div class="desktop-scroll-shell">
@@ -27,7 +27,7 @@
       <main
         class="workspace-layout is-collapsed"
         id="workspaceLayout"
-        style="--panel-width: 300px; --rail-width: <%= railWidth || '64px' %>;"
+        style="--panel-width: 360px; --rail-width: <%= railWidth || '72px' %>;"
       >
         <section class="panel panel-editor">
           <div class="editor-scroll">
@@ -95,6 +95,12 @@
             </div>
 
             <p id="saveStatus" class="status-line" aria-live="polite"></p>
+
+            <div class="floating-song-actions">
+              <button id="analyzeBtn" type="button" class="primary-btn floating-action-btn">Analyze</button>
+              <button id="saveSongBtn" type="button" class="accent-btn floating-action-btn">Save Song</button>
+              <button id="newSongBtn" type="button" class="secondary-btn floating-action-btn">New Song</button>
+            </div>
           </div>
         </section>
 
@@ -189,15 +195,6 @@
 
                 <div class="tools-panel-body">
                   <div class="tool-section">
-                    <p class="tool-section-label">Song actions</p>
-                    <div class="tool-action-grid">
-                      <button id="analyzeBtn" type="button" class="primary-btn tool-action-btn">Analyze</button>
-                      <button id="saveSongBtn" type="button" class="accent-btn tool-action-btn">Save Song</button>
-                      <button id="newSongBtn" type="button" class="secondary-btn tool-action-btn">New Song</button>
-                    </div>
-                  </div>
-
-                  <div class="tool-section">
                     <p class="tool-section-label">Writing prompts</p>
                     <div class="tool-row tool-row-drawer">
                       <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
@@ -234,10 +231,10 @@
     let draggingSectionId = null;
     let statusClearTimer = null;
 
-    const DEFAULT_PANEL_WIDTH = 300;
-    const MIN_PANEL_WIDTH = 240;
-    const MAX_PANEL_WIDTH = 420;
-    const RAIL_WIDTH = parseInt("<%= railWidth || '64px' %>", 10) || 64;
+    const DEFAULT_PANEL_WIDTH = 360;
+    const MIN_PANEL_WIDTH = 280;
+    const MAX_PANEL_WIDTH = 560;
+    const RAIL_WIDTH = parseInt("<%= railWidth || '72px' %>", 10) || 72;
 
     const workspaceLayout = document.getElementById("workspaceLayout");
     const panelResizeHandle = document.getElementById("panelResizeHandle");
@@ -312,20 +309,6 @@
         statusClearTimer = setTimeout(() => {
           clearStatusMessage();
         }, autoClearMs);
-      }
-    }
-
-    function completeDrawerAction(message, options = {}) {
-      const {
-        isError = false,
-        autoClearMs = 3200,
-        collapse = true
-      } = options;
-
-      setStatus(message, isError, autoClearMs);
-
-      if (!isError && collapse) {
-        collapsePanel();
       }
     }
 
@@ -687,11 +670,6 @@
         sections = parsed;
         renderSections();
       }
-
-      completeDrawerAction(`Inserted "${word}" into the lyrics.`, {
-        autoClearMs: 2200,
-        collapse: true
-      });
     }
 
     function getFallbackRhymes(word) {
@@ -861,11 +839,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          completeDrawerAction(data.details || data.error || "Could not load song.", {
-            isError: true,
-            autoClearMs: 3500,
-            collapse: false
-          });
+          setStatus(data.details || data.error || "Could not load song.", true, 3500);
           return;
         }
 
@@ -878,16 +852,9 @@
         sections = parsed.length ? parsed : [];
         renderSections();
 
-        completeDrawerAction(`Loaded "${data.song.title}". Saving now updates this song.`, {
-          autoClearMs: 3200,
-          collapse: true
-        });
+        setStatus(`Loaded "${data.song.title}".`, false, 2800);
       } catch (error) {
-        completeDrawerAction("Could not load song.", {
-          isError: true,
-          autoClearMs: 3500,
-          collapse: false
-        });
+        setStatus("Could not load song.", true, 3500);
       }
     }
 
@@ -903,7 +870,7 @@
       }
 
       lyricsInput.value = lyrics;
-      setStatus(currentSongId ? "Updating song..." : "Saving new song...", false);
+      setStatus("Saving song...", false);
 
       try {
         const url = currentSongId ? `/api/songs/${currentSongId}` : "/api/songs";
@@ -922,32 +889,18 @@
         const data = await response.json();
 
         if (!response.ok) {
-          completeDrawerAction(data.details || data.error || "Could not save song.", {
-            isError: true,
-            autoClearMs: 5000,
-            collapse: false
-          });
+          setStatus(data.details || data.error || "Could not save song.", true, 5000);
           return;
         }
 
-        currentSongId = data.songId || data.id || currentSongId;
-        await loadSongs();
+        if (data.songId) {
+          currentSongId = data.songId;
+        }
 
-        completeDrawerAction(
-          method === "PUT"
-            ? `Updated existing song: "${title}"`
-            : `Saved new song: "${title}"`,
-          {
-            autoClearMs: 4500,
-            collapse: true
-          }
-        );
+        await loadSongs();
+        setStatus(`✓ Song saved successfully: "${title}"`, false, 4500);
       } catch (error) {
-        completeDrawerAction("Could not save song.", {
-          isError: true,
-          autoClearMs: 5000,
-          collapse: false
-        });
+        setStatus("Could not save song.", true, 5000);
       }
     }
 
@@ -963,11 +916,7 @@
         const data = await response.json();
 
         if (!response.ok) {
-          completeDrawerAction(data.details || data.error || "Could not delete song.", {
-            isError: true,
-            autoClearMs: 4000,
-            collapse: false
-          });
+          setStatus(data.details || data.error || "Could not delete song.", true, 4000);
           return;
         }
 
@@ -982,18 +931,10 @@
           hideToolResults();
         }
 
+        setStatus("Song deleted.", false, 2800);
         await loadSongs();
-
-        completeDrawerAction("Song deleted.", {
-          autoClearMs: 2800,
-          collapse: true
-        });
       } catch (error) {
-        completeDrawerAction("Could not delete song.", {
-          isError: true,
-          autoClearMs: 4000,
-          collapse: false
-        });
+        setStatus("Could not delete song.", true, 4000);
       }
     }
 
@@ -1006,10 +947,7 @@
       renderSections();
       analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
       hideToolResults();
-      completeDrawerAction("Started a new song.", {
-        autoClearMs: 2400,
-        collapse: true
-      });
+      clearStatusMessage();
     }
 
     async function analyzeLyrics() {
@@ -1027,11 +965,6 @@
 
         if (!response.ok) {
           analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
-          completeDrawerAction("Could not analyze lyrics.", {
-            isError: true,
-            autoClearMs: 3000,
-            collapse: false
-          });
           return;
         }
 
@@ -1066,17 +999,9 @@
           </div>
         `;
 
-        completeDrawerAction("Analysis complete.", {
-          autoClearMs: 2200,
-          collapse: true
-        });
+        openPanel("analysis");
       } catch (error) {
         analysisResults.innerHTML = '<p class="empty-copy">Could not analyze lyrics.</p>';
-        completeDrawerAction("Could not analyze lyrics.", {
-          isError: true,
-          autoClearMs: 3000,
-          collapse: false
-        });
       }
     }
 
@@ -1084,17 +1009,16 @@
       const sourceWord = getSelectionOrLastWord();
 
       if (!sourceWord) {
-        completeDrawerAction("Select a word or place your cursor in the editor first.", {
-          isError: true,
-          autoClearMs: 3200,
-          collapse: false
-        });
+        showToolResults(
+          "Rhyming ideas",
+          `<p class="empty-copy">Select a word or place your cursor in the editor first.</p>`
+        );
         return;
       }
 
       showToolResults(
         "Rhyming ideas",
-        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...</p>`
+        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...<\/p>`
       );
 
       try {
@@ -1126,13 +1050,8 @@
       } catch (error) {
         const fallback = getFallbackRhymes(sourceWord);
         renderRhymeResults(sourceWord, fallback);
-
         if (!fallback.length) {
-          completeDrawerAction("No rhyme suggestions found.", {
-            isError: true,
-            autoClearMs: 3500,
-            collapse: false
-          });
+          setStatus("No rhyme suggestions found.", true, 3500);
         } else {
           setStatus("Using fallback rhyme ideas.", true, 3000);
         }
@@ -1154,7 +1073,7 @@
           throw new Error(data.details || data.error || "Could not fetch random ideas.");
         }
 
-        const items = Array.isArray(data.result) ? data.result : data.result ? [data.result] : [];
+        const items = data.result ? [data.result] : [];
 
         if (!items.length) {
           throw new Error("No random ideas returned.");
