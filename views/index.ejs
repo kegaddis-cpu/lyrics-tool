@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=40" />
+  <link rel="stylesheet" href="/style.css?v=41" />
 </head>
 <body>
   <div class="app-shell">
@@ -23,7 +23,11 @@
       </div>
     </header>
 
-   <main class="workspace-layout" id="workspaceLayout" ...>
+    <main
+      class="workspace-layout"
+      id="workspaceLayout"
+      style="--panel-width: 360px; --rail-width: <%= railWidth || '72px' %>;"
+    >
       <section class="panel panel-editor">
         <div class="editor-top-strip">
           <div class="field-group title-field">
@@ -45,6 +49,7 @@
           </label>
 
           <div class="main-action-bar">
+            <button id="openLibraryBtn" type="button" class="ghost-btn action-btn-main">Open</button>
             <button id="analyzeBtn" type="button" class="primary-btn action-btn-main">Analyze</button>
             <button id="saveSongBtn" type="button" class="accent-btn action-btn-main">Save</button>
             <button id="newSongBtn" type="button" class="secondary-btn action-btn-main">New</button>
@@ -111,7 +116,7 @@
 
       <div class="side-shell">
         <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-          <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
+          <button id="tab-library" class="side-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-library" data-panel="library" tabindex="0">
             <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
@@ -148,12 +153,12 @@
 
         <aside class="side-panel panel" id="sidePanel" aria-label="Workspace tools">
           <div class="side-panel-topbar">
-            <p id="activePanelLabel" class="side-panel-label">Workspace panel</p>
+            <p id="activePanelLabel" class="side-panel-label">Library panel</p>
             <button id="collapsePanelBtn" type="button" class="ghost-btn small-btn">Collapse</button>
           </div>
 
           <div class="side-panel-body">
-            <section id="panel-library" class="side-panel-view" role="tabpanel" aria-labelledby="tab-library" hidden>
+            <section id="panel-library" class="side-panel-view is-active" role="tabpanel" aria-labelledby="tab-library">
               <div class="drawer-panel-header">
                 <div>
                   <p class="panel-kicker">Library</p>
@@ -238,6 +243,7 @@
     const lyricsInput = document.getElementById("lyricsInput");
     const songTitle = document.getElementById("songTitle");
     const isPublic = document.getElementById("isPublic");
+    const openLibraryBtn = document.getElementById("openLibraryBtn");
     const analyzeBtn = document.getElementById("analyzeBtn");
     const saveSongBtn = document.getElementById("saveSongBtn");
     const newSongBtn = document.getElementById("newSongBtn");
@@ -311,9 +317,7 @@
     }
 
     function openPanel(panelName, moveFocus = false) {
-      if (workspaceLayout.classList.contains("is-collapsed")) {
-        workspaceLayout.classList.remove("is-collapsed");
-      }
+      workspaceLayout.classList.remove("is-collapsed");
 
       const currentWidth = parseInt(workspaceLayout.style.getPropertyValue("--panel-width"), 10);
       if (!currentWidth) {
@@ -363,7 +367,7 @@
         tab.classList.contains("is-active");
 
       if (alreadyOpen) {
- "collapsePanel();"
+        collapsePanel();
         return;
       }
 
@@ -763,6 +767,7 @@
 
     collapsePanelBtn.addEventListener("click", collapsePanel);
     closeToolResultsBtn.addEventListener("click", hideToolResults);
+    openLibraryBtn.addEventListener("click", () => openPanel("library"));
 
     let isResizing = false;
 
@@ -849,10 +854,7 @@
         renderSections();
 
         setStatus(`Loaded "${data.song.title}".`, false, 2800);
-
-        setTimeout(() => {
-          collapsePanel();
-        }, 0);
+        openPanel("library");
       } catch (error) {
         setStatus("Could not load song.", true, 3500);
       }
@@ -935,10 +937,6 @@
 
         setStatus("Song deleted.", false, 2800);
         await loadSongs();
-
-        setTimeout(() => {
-          collapsePanel();
-        }, 0);
       } catch (error) {
         setStatus("Could not delete song.", true, 4000);
       }
@@ -1099,8 +1097,8 @@
     randomBtn.addEventListener("click", showRandomIdeas);
 
     loadSongs();
-    collapsePanel();
     renderSections();
+    openPanel("library");
 
     window.openSong = openSong;
     window.deleteSong = deleteSong;
