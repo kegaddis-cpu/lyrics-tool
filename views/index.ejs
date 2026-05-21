@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=41" />
+  <link rel="stylesheet" href="/style.css?v=42" />
 </head>
 <body>
   <div class="app-shell">
@@ -57,31 +57,38 @@
         </div>
 
         <div class="editor-main-grid">
-          <section class="section-builder-card compact-builder-card">
-            <div class="section-builder-head compact-builder-head">
-              <div>
+          <details class="section-builder-card sections-details compact-builder-card" open>
+            <summary class="sections-summary">
+              <div class="sections-summary-copy">
                 <p class="panel-kicker">Sections</p>
                 <h2>Structure</h2>
+                <p class="builder-copy">Add sections, drag them into order, and keep the full draft synced below.</p>
               </div>
-              <p class="builder-copy">Add sections, drag them into order, and keep the full draft synced below.</p>
-            </div>
+              <span class="sections-summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 8l4 4 4-4"></path>
+                </svg>
+              </span>
+            </summary>
 
-            <div class="section-type-row compact-type-row">
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
-              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
-            </div>
+            <div class="sections-details-body">
+              <div class="section-type-row compact-type-row">
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
+                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
+              </div>
 
-            <div id="sectionsList" class="sections-list sections-list-compact"></div>
+              <div id="sectionsList" class="sections-list sections-list-compact"></div>
 
-            <div id="sectionsEmptyState" class="sections-empty-state">
-              <p class="empty-copy">No sections yet. Start with a Verse or Chorus.</p>
+              <div id="sectionsEmptyState" class="sections-empty-state">
+                <p class="empty-copy">No sections yet. Start with a Verse or Chorus.</p>
+              </div>
             </div>
-          </section>
+          </details>
 
           <section class="lyrics-panel">
             <div class="lyrics-panel-head">
