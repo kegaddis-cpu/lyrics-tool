@@ -59,12 +59,6 @@
               </label>
             </div>
 
-            <div class="floating-song-actions">
-              <button id="analyzeBtn" type="button" class="primary-btn floating-action-btn">Analyze</button>
-              <button id="saveSongBtn" type="button" class="accent-btn floating-action-btn">Save Song</button>
-              <button id="newSongBtn" type="button" class="secondary-btn floating-action-btn">New Song</button>
-            </div>
-
             <section class="section-builder-card">
               <div class="section-builder-head">
                 <div>
@@ -194,6 +188,15 @@
                 <p class="drawer-copy">Use quick actions, generate rhymes, and spark ideas without crowding the editor.</p>
 
                 <div class="tools-panel-body">
+                  <div class="tool-section">
+                    <p class="tool-section-label">Song actions</p>
+                    <div class="tool-action-grid">
+                      <button id="analyzeBtn" type="button" class="primary-btn tool-action-btn">Analyze</button>
+                      <button id="saveSongBtn" type="button" class="accent-btn tool-action-btn">Save Song</button>
+                      <button id="newSongBtn" type="button" class="secondary-btn tool-action-btn">New Song</button>
+                    </div>
+                  </div>
+
                   <div class="tool-section">
                     <p class="tool-section-label">Writing prompts</p>
                     <div class="tool-row tool-row-drawer">
@@ -823,8 +826,8 @@
             <p class="song-preview">${escapeHtml((song.lyrics || "").slice(0, 100)) || "No lyrics saved yet."}</p>
 
             <div class="song-card-actions">
-              <button type="button" class="primary-btn small-btn" onclick="openSong(${song.id})">Load</button>
-              <button type="button" class="secondary-btn small-btn" onclick="deleteSong(${song.id})">Delete</button>
+              <button type="button" class="primary-btn small-btn" onclick="openSong(${song.id}, event)">Load</button>
+              <button type="button" class="secondary-btn small-btn" onclick="deleteSong(${song.id}, event)">Delete</button>
             </div>
           </article>
         `).join("");
@@ -833,7 +836,9 @@
       }
     }
 
-    async function openSong(songId) {
+    async function openSong(songId, event) {
+      if (event) event.stopPropagation();
+
       try {
         const response = await fetch(`/api/songs/${songId}`);
         const data = await response.json();
@@ -853,7 +858,10 @@
         renderSections();
 
         setStatus(`Loaded "${data.song.title}".`, false, 2800);
-        openPanel("library");
+
+        setTimeout(() => {
+          collapsePanel();
+        }, 0);
       } catch (error) {
         setStatus("Could not load song.", true, 3500);
       }
@@ -905,7 +913,9 @@
       }
     }
 
-    async function deleteSong(songId) {
+    async function deleteSong(songId, event) {
+      if (event) event.stopPropagation();
+
       const confirmed = window.confirm("Delete this song?");
       if (!confirmed) return;
 
@@ -934,6 +944,10 @@
 
         setStatus("Song deleted.", false, 2800);
         await loadSongs();
+
+        setTimeout(() => {
+          collapsePanel();
+        }, 0);
       } catch (error) {
         setStatus("Could not delete song.", true, 4000);
       }
@@ -1102,21 +1116,6 @@
     window.insertToolWord = function (word) {
       insertWordIntoEditor(word);
     };
-
-document.querySelector(".side-panel-body").addEventListener("click", (event) => {
-  const clickedButton = event.target.closest("button");
-  if (!clickedButton) return;
-
-  const shouldIgnore =
-    clickedButton.id === "collapsePanelBtn" ||
-    clickedButton.id === "closeToolResultsBtn";
-
-  if (shouldIgnore) return;
-
-  setTimeout(() => {
-    collapsePanel();
-  }, 0);
-});
   </script>
 </body>
 </html>
