@@ -1102,6 +1102,21 @@
     window.insertToolWord = function (word) {
       insertWordIntoEditor(word);
     };
+
+document.querySelector(".side-panel-body").addEventListener("click", (event) => {
+  const clickedButton = event.target.closest("button");
+  if (!clickedButton) return;
+
+  const shouldIgnore =
+    clickedButton.id === "collapsePanelBtn" ||
+    clickedButton.id === "closeToolResultsBtn";
+
+  if (shouldIgnore) return;
+
+  setTimeout(() => {
+    collapsePanel();
+  }, 0);
+});
   </script>
 </body>
 </html>
