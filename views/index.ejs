@@ -4,225 +4,220 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=22" />
+  <link rel="stylesheet" href="/style.css?v=40" />
 </head>
 <body>
-  <div class="desktop-scroll-shell">
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <p class="eyebrow">Lyrics workspace</p>
-          <h1>Lyrics Helper</h1>
-          <p class="welcome-line">Welcome, <%= username %></p>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <p class="eyebrow">Lyrics workspace</p>
+        <h1>Lyrics Helper</h1>
+      </div>
+
+      <div class="topbar-actions">
+        <p class="welcome-line">Welcome, <%= username %></p>
+        <p class="version-pill"><%= pageVersion %></p>
+        <form action="/logout" method="POST">
+          <button type="submit" class="ghost-btn small-btn">Logout</button>
+        </form>
+      </div>
+    </header>
+
+    <main
+      class="workspace-layout is-collapsed"
+      id="workspaceLayout"
+      style="--panel-width: clamp(18rem, 24vw, 28rem); --rail-width: <%= railWidth || '72px' %>;"
+    >
+      <section class="panel panel-editor">
+        <div class="editor-top-strip">
+          <div class="field-group title-field">
+            <label for="songTitle">Song title</label>
+            <input
+              type="text"
+              id="songTitle"
+              placeholder="Enter a title"
+              maxlength="255"
+            />
+          </div>
+
+          <label class="toggle-card compact-toggle" for="isPublic">
+            <span class="toggle-copy">
+              <strong>Public</strong>
+              <small>Visible later</small>
+            </span>
+            <input type="checkbox" id="isPublic" />
+          </label>
+
+          <div class="main-action-bar">
+            <button id="analyzeBtn" type="button" class="primary-btn action-btn-main">Analyze</button>
+            <button id="saveSongBtn" type="button" class="accent-btn action-btn-main">Save</button>
+            <button id="newSongBtn" type="button" class="secondary-btn action-btn-main">New</button>
+          </div>
         </div>
 
-        <div class="topbar-actions">
-          <p class="version-pill">Version: <%= pageVersion %></p>
-          <form action="/logout" method="POST">
-            <button type="submit" class="ghost-btn">Logout</button>
-          </form>
-        </div>
-      </header>
-
-      <main
-        class="workspace-layout is-collapsed"
-        id="workspaceLayout"
-        style="--panel-width: 360px; --rail-width: <%= railWidth || '72px' %>;"
-      >
-        <section class="panel panel-editor">
-          <div class="editor-scroll">
-            <div class="panel-header">
-              <div class="panel-heading-block">
-                <p class="panel-kicker">Editor</p>
-                <h2>Write, structure, and save</h2>
+        <div class="editor-main-grid">
+          <section class="section-builder-card compact-builder-card">
+            <div class="section-builder-head compact-builder-head">
+              <div>
+                <p class="panel-kicker">Sections</p>
+                <h2>Structure</h2>
               </div>
-              <p class="panel-copy">Build songs as draggable sections, then keep the combined lyrics synced in the main editor for analysis, rhymes, and saving.</p>
+              <p class="builder-copy">Add sections, drag them into order, and keep the full draft synced below.</p>
             </div>
 
-            <div class="meta-row">
-              <div class="field-group field-grow">
-                <label for="songTitle">Song title</label>
-                <input
-                  type="text"
-                  id="songTitle"
-                  placeholder="Enter a title"
-                  maxlength="255"
-                />
-              </div>
-
-              <label class="toggle-card" for="isPublic">
-                <span class="toggle-copy">
-                  <strong>Public</strong>
-                  <small>Visible to others later</small>
-                </span>
-                <input type="checkbox" id="isPublic" />
-              </label>
+            <div class="section-type-row compact-type-row">
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
+              <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
             </div>
 
-            <section class="section-builder-card">
-              <div class="section-builder-head">
-                <div>
-                  <p class="panel-kicker">Song sections</p>
-                  <h3>Arrange your structure</h3>
-                </div>
-                <p class="builder-copy">Add Verse, Chorus, Pre-Chorus, Bridge, Hook, Intro, and Outro blocks, then drag them into the order you want.</p>
+            <div id="sectionsList" class="sections-list sections-list-compact"></div>
+
+            <div id="sectionsEmptyState" class="sections-empty-state">
+              <p class="empty-copy">No sections yet. Start with a Verse or Chorus.</p>
+            </div>
+          </section>
+
+          <section class="lyrics-panel">
+            <div class="lyrics-panel-head">
+              <div>
+                <p class="panel-kicker">Draft</p>
+                <h2>Lyrics editor</h2>
               </div>
+              <p id="saveStatus" class="status-line" aria-live="polite"></p>
+            </div>
 
-              <div class="section-type-row">
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
-              </div>
-
-              <div id="sectionsList" class="sections-list"></div>
-
-              <div id="sectionsEmptyState" class="sections-empty-state">
-                <p class="empty-copy">No sections yet. Start by adding a Verse or Chorus above.</p>
-              </div>
-            </section>
-
-            <div class="field-group editor-lyrics-group">
+            <div class="field-group editor-lyrics-group compact-lyrics-group">
               <label for="lyricsInput">Full lyrics</label>
               <textarea
                 id="lyricsInput"
                 placeholder="Write your lyrics here, or build them from sections above..."
-                rows="20"
+                rows="16"
               ></textarea>
             </div>
+          </section>
+        </div>
+      </section>
 
-            <p id="saveStatus" class="status-line" aria-live="polite"></p>
-          </div>
-        </section>
+      <div
+        id="panelResizeHandle"
+        class="panel-resizer"
+        role="separator"
+        aria-label="Resize side panel"
+        aria-orientation="vertical"
+      >
+        <span class="panel-resizer-grip"></span>
+      </div>
 
-        <div
-          id="panelResizeHandle"
-          class="panel-resizer"
-          role="separator"
-          aria-label="Resize side panel"
-          aria-orientation="vertical"
-        >
-          <span class="panel-resizer-grip"></span>
+      <div class="side-shell">
+        <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
+          <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
+            <span class="side-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
+                <path d="M8 8h8"></path>
+                <path d="M8 12h8"></path>
+              </svg>
+            </span>
+            <span class="side-tab-text">Library</span>
+          </button>
+
+          <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
+            <span class="side-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19h16"></path>
+                <path d="M7 16V9"></path>
+                <path d="M12 16V5"></path>
+                <path d="M17 16v-4"></path>
+              </svg>
+            </span>
+            <span class="side-tab-text">Analysis</span>
+          </button>
+
+          <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
+            <span class="side-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
+                <path d="M13.5 7.5l3 3"></path>
+                <path d="M5 21h14"></path>
+              </svg>
+            </span>
+            <span class="side-tab-text">Tools</span>
+          </button>
         </div>
 
-        <div class="side-shell">
-          <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-            <button id="tab-library" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-library" data-panel="library" tabindex="0">
-              <span class="side-tab-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
-                  <path d="M8 8h8"></path>
-                  <path d="M8 12h8"></path>
-                </svg>
-              </span>
-              <span class="side-tab-text">Library</span>
-            </button>
-
-            <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
-              <span class="side-tab-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19h16"></path>
-                  <path d="M7 16V9"></path>
-                  <path d="M12 16V5"></path>
-                  <path d="M17 16v-4"></path>
-                </svg>
-              </span>
-              <span class="side-tab-text">Analysis</span>
-            </button>
-
-            <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
-              <span class="side-tab-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
-                  <path d="M13.5 7.5l3 3"></path>
-                  <path d="M5 21h14"></path>
-                </svg>
-              </span>
-              <span class="side-tab-text">Tools</span>
-            </button>
+        <aside class="side-panel panel" id="sidePanel" aria-label="Workspace tools">
+          <div class="side-panel-topbar">
+            <p id="activePanelLabel" class="side-panel-label">Workspace panel</p>
+            <button id="collapsePanelBtn" type="button" class="ghost-btn small-btn">Collapse</button>
           </div>
 
-          <aside class="side-panel panel" id="sidePanel" aria-label="Workspace tools">
-            <div class="side-panel-topbar">
-              <p id="activePanelLabel" class="side-panel-label">Workspace panel</p>
-              <button id="collapsePanelBtn" type="button" class="ghost-btn small-btn">Collapse</button>
-            </div>
+          <div class="side-panel-body">
+            <section id="panel-library" class="side-panel-view" role="tabpanel" aria-labelledby="tab-library" hidden>
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Library</p>
+                  <h2>My songs</h2>
+                </div>
+              </div>
+              <p class="drawer-copy">Load, update, and remove saved songs.</p>
+              <div id="songsList" class="songs-list">
+                <p class="empty-copy">Loading songs...</p>
+              </div>
+            </section>
 
-            <div class="side-panel-body">
-              <section id="panel-library" class="side-panel-view" role="tabpanel" aria-labelledby="tab-library" hidden>
-                <div class="drawer-panel-header">
-                  <div>
-                    <p class="panel-kicker">Library</p>
-                    <h2>My songs</h2>
+            <section id="panel-analysis" class="side-panel-view" role="tabpanel" aria-labelledby="tab-analysis" hidden>
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Analysis</p>
+                  <h2>Song insights</h2>
+                </div>
+              </div>
+              <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
+              <div id="analysisResults" class="analysis-results">
+                <p class="empty-copy">No analysis yet.</p>
+              </div>
+            </section>
+
+            <section id="panel-tools" class="side-panel-view" role="tabpanel" aria-labelledby="tab-tools" hidden>
+              <div class="drawer-panel-header">
+                <div>
+                  <p class="panel-kicker">Tools</p>
+                  <h2>Writing aids</h2>
+                </div>
+              </div>
+              <p class="drawer-copy">Use rhymes and prompts without crowding the editor.</p>
+
+              <div class="tools-panel-body">
+                <div class="tool-section">
+                  <p class="tool-section-label">Writing prompts</p>
+                  <div class="tool-row tool-row-drawer">
+                    <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
+                    <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
                   </div>
                 </div>
-                <p class="drawer-copy">Load, update, and remove saved songs.</p>
-                <div id="songsList" class="songs-list">
-                  <p class="empty-copy">Loading songs...</p>
+
+                <div id="toolResults" class="tool-results" hidden>
+                  <div class="tool-results-head">
+                    <h3 id="toolResultsTitle">Writing tools</h3>
+                    <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
+                  </div>
+                  <div id="toolResultsBody" class="tool-results-body"></div>
                 </div>
-              </section>
 
-              <section id="panel-analysis" class="side-panel-view" role="tabpanel" aria-labelledby="tab-analysis" hidden>
-                <div class="drawer-panel-header">
-                  <div>
-                    <p class="panel-kicker">Analysis</p>
-                    <h2>Song insights</h2>
-                  </div>
+                <div id="toolEmptyState" class="tool-empty-state">
+                  <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.</p>
                 </div>
-                <p class="drawer-copy">View structure and word-count analysis for the current draft.</p>
-                <div id="analysisResults" class="analysis-results">
-                  <p class="empty-copy">No analysis yet.</p>
-                </div>
-              </section>
-
-              <section id="panel-tools" class="side-panel-view" role="tabpanel" aria-labelledby="tab-tools" hidden>
-                <div class="drawer-panel-header">
-                  <div>
-                    <p class="panel-kicker">Tools</p>
-                    <h2>Writing tools</h2>
-                  </div>
-                </div>
-                <p class="drawer-copy">Use quick actions, generate rhymes, and spark ideas without crowding the editor.</p>
-
-                <div class="tools-panel-body">
-                  <div class="tool-section">
-                    <p class="tool-section-label">Song actions</p>
-                    <div class="tool-action-grid">
-                      <button id="analyzeBtn" type="button" class="primary-btn tool-action-btn">Analyze</button>
-                      <button id="saveSongBtn" type="button" class="accent-btn tool-action-btn">Save Song</button>
-                      <button id="newSongBtn" type="button" class="secondary-btn tool-action-btn">New Song</button>
-                    </div>
-                  </div>
-
-                  <div class="tool-section">
-                    <p class="tool-section-label">Writing prompts</p>
-                    <div class="tool-row tool-row-drawer">
-                      <button id="rhymingBtn" type="button" class="secondary-btn tool-btn">Rhyming</button>
-                      <button id="randomBtn" type="button" class="secondary-btn tool-btn">Random</button>
-                    </div>
-                  </div>
-
-                  <div id="toolResults" class="tool-results" hidden>
-                    <div class="tool-results-head">
-                      <h3 id="toolResultsTitle">Writing tools</h3>
-                      <button id="closeToolResultsBtn" type="button" class="ghost-btn small-btn">Close</button>
-                    </div>
-                    <div id="toolResultsBody" class="tool-results-body"></div>
-                  </div>
-
-                  <div id="toolEmptyState" class="tool-empty-state">
-                    <p class="empty-copy">Select a word in the editor, then use Rhyming to fetch rhyme matches. Click a result to insert it into your lyrics.</p>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </aside>
-        </div>
-      </main>
-    </div>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </div>
+    </main>
   </div>
 
   <script>
