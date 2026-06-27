@@ -69,11 +69,11 @@ function validateSongId(idParam) {
 }
 
 app.get("/health", (req, res) => {
-    res.status(200).json({
-        ok: true,
-        dbReady,
-        error: dbError ? dbError.message : null
-    });
+  res.status(200).json({
+    ok: true,
+    dbReady,
+    error: dbError ? dbError.message : null
+  });
 });
 
 app.get("/", (req, res) => {
