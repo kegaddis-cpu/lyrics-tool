@@ -12,15 +12,19 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
+  host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "lyrics_helper",
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  connectTimeout: 10000
 });
+
+let dbReady = false;
+let dbError = null;
 
 async function initDatabase() {
   await pool.execute(`
@@ -38,6 +42,17 @@ async function initDatabase() {
   `);
 }
 
+async function ensureDb(req, res, next) {
+  if (dbReady) {
+    return next();
+  }
+
+  return res.status(503).json({
+    error: "Database not ready.",
+    details: dbError ? dbError.message : "Database is still starting."
+  });
+}
+
 function normalizeBoolean(value) {
   if (value === true || value === 1 || value === "1" || value === "true" || value === "on") {
     return 1;
@@ -53,6 +68,14 @@ function validateSongId(idParam) {
   return songId;
 }
 
+app.get("/health", (req, res) => {
+  res.status(dbReady ? 200 : 503).json({
+    ok: dbReady,
+    dbReady,
+    error: dbError ? dbError.message : null
+  });
+});
+
 app.get("/", (req, res) => {
   res.render("index", {
     username: "MonkeyMan",
@@ -65,15 +88,13 @@ app.post("/logout", (req, res) => {
   res.redirect("/");
 });
 
-app.get("/api/songs", async (req, res, next) => {
+app.get("/api/songs", ensureDb, async (req, res, next) => {
   try {
-    const [rows] = await pool.execute(
-      `
+    const [rows] = await pool.execute(`
       SELECT id, title, lyrics, is_public, created_at, updated_at
       FROM songs
       ORDER BY updated_at DESC, id DESC
-      `
-    );
+    `);
 
     res.json({ songs: rows });
   } catch (error) {
@@ -81,7 +102,7 @@ app.get("/api/songs", async (req, res, next) => {
   }
 });
 
-app.get("/api/songs/:id", async (req, res, next) => {
+app.get("/api/songs/:id", ensureDb, async (req, res, next) => {
   try {
     const songId = validateSongId(req.params.id);
 
@@ -89,15 +110,12 @@ app.get("/api/songs/:id", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid song id." });
     }
 
-    const [rows] = await pool.execute(
-      `
+    const [rows] = await pool.execute(`
       SELECT id, title, lyrics, is_public, created_at, updated_at
       FROM songs
       WHERE id = ?
       LIMIT 1
-      `,
-      [songId]
-    );
+    `, [songId]);
 
     if (!rows.length) {
       return res.status(404).json({ error: "Song not found." });
@@ -109,7 +127,7 @@ app.get("/api/songs/:id", async (req, res, next) => {
   }
 });
 
-app.post("/api/songs", async (req, res, next) => {
+app.post("/api/songs", ensureDb, async (req, res, next) => {
   try {
     const title = String(req.body.title || "").trim();
     const lyrics = String(req.body.lyrics || "");
@@ -119,23 +137,17 @@ app.post("/api/songs", async (req, res, next) => {
       return res.status(400).json({ error: "Title is required." });
     }
 
-    const [result] = await pool.execute(
-      `
+    const [result] = await pool.execute(`
       INSERT INTO songs (title, lyrics, is_public)
       VALUES (?, ?, ?)
-      `,
-      [title, lyrics, isPublic]
-    );
+    `, [title, lyrics, isPublic]);
 
-    const [rows] = await pool.execute(
-      `
+    const [rows] = await pool.execute(`
       SELECT id, title, lyrics, is_public, created_at, updated_at
       FROM songs
       WHERE id = ?
       LIMIT 1
-      `,
-      [result.insertId]
-    );
+    `, [result.insertId]);
 
     res.status(201).json({
       message: "Song created.",
@@ -147,7 +159,7 @@ app.post("/api/songs", async (req, res, next) => {
   }
 });
 
-app.put("/api/songs/:id", async (req, res, next) => {
+app.put("/api/songs/:id", ensureDb, async (req, res, next) => {
   try {
     const songId = validateSongId(req.params.id);
     const title = String(req.body.title || "").trim();
@@ -162,28 +174,22 @@ app.put("/api/songs/:id", async (req, res, next) => {
       return res.status(400).json({ error: "Title is required." });
     }
 
-    const [result] = await pool.execute(
-      `
+    const [result] = await pool.execute(`
       UPDATE songs
       SET title = ?, lyrics = ?, is_public = ?
       WHERE id = ?
-      `,
-      [title, lyrics, isPublic, songId]
-    );
+    `, [title, lyrics, isPublic, songId]);
 
     if (!result.affectedRows) {
       return res.status(404).json({ error: "Song not found." });
     }
 
-    const [rows] = await pool.execute(
-      `
+    const [rows] = await pool.execute(`
       SELECT id, title, lyrics, is_public, created_at, updated_at
       FROM songs
       WHERE id = ?
       LIMIT 1
-      `,
-      [songId]
-    );
+    `, [songId]);
 
     res.json({
       message: "Song updated.",
@@ -195,7 +201,7 @@ app.put("/api/songs/:id", async (req, res, next) => {
   }
 });
 
-app.delete("/api/songs/:id", async (req, res, next) => {
+app.delete("/api/songs/:id", ensureDb, async (req, res, next) => {
   try {
     const songId = validateSongId(req.params.id);
 
@@ -203,27 +209,21 @@ app.delete("/api/songs/:id", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid song id." });
     }
 
-    const [rows] = await pool.execute(
-      `
+    const [rows] = await pool.execute(`
       SELECT id, title, lyrics, is_public, created_at, updated_at
       FROM songs
       WHERE id = ?
       LIMIT 1
-      `,
-      [songId]
-    );
+    `, [songId]);
 
     if (!rows.length) {
       return res.status(404).json({ error: "Song not found." });
     }
 
-    await pool.execute(
-      `
+    await pool.execute(`
       DELETE FROM songs
       WHERE id = ?
-      `,
-      [songId]
-    );
+    `, [songId]);
 
     res.json({
       message: "Song deleted.",
@@ -312,14 +312,24 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-initDatabase()
-  .then(async () => {
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+(async () => {
+  try {
+    if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
+      throw new Error("Missing required database environment variables.");
+    }
+
+    await initDatabase();
     await pool.execute("SELECT 1");
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  });
+    dbReady = true;
+    dbError = null;
+    console.log("Database ready");
+  } catch (error) {
+    dbReady = false;
+    dbError = error;
+    console.error("Database init failed:", error);
+  }
+})();
