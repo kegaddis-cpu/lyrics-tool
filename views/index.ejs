@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=43" />
+  <link rel="stylesheet" href="/style.css?v=44" />
 </head>
 <body>
   <div class="app-shell">
@@ -39,6 +39,14 @@
               maxlength="255"
             />
           </div>
+
+          <label class="toggle-card" for="isPublic">
+            <span class="toggle-copy">
+              <strong>Public song</strong>
+              <small>Allow this song to be visible in shared views.</small>
+            </span>
+            <input type="checkbox" id="isPublic" />
+          </label>
 
           <div class="main-action-bar">
             <button id="openLibraryBtn" type="button" class="ghost-btn action-btn-main">Open</button>
@@ -121,8 +129,17 @@
       </div>
 
       <div class="side-shell">
-        <div class="side-tab-rail" role="tablist" aria-label="Workspace sections">
-          <button id="tab-library" class="side-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-library" data-panel="library" tabindex="0">
+        <div class="side-tab-rail" role="tablist" aria-label="Workspace panels">
+          <button
+            id="tab-library"
+            class="side-tab is-active"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-library"
+            data-panel="library"
+            tabindex="0"
+          >
             <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v15.5A1.5 1.5 0 0 0 18.5 18H6.5A2.5 2.5 0 0 0 4 20.5z"></path>
@@ -133,7 +150,16 @@
             <span class="side-tab-text">Library</span>
           </button>
 
-          <button id="tab-analysis" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-analysis" data-panel="analysis" tabindex="-1">
+          <button
+            id="tab-analysis"
+            class="side-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-analysis"
+            data-panel="analysis"
+            tabindex="-1"
+          >
             <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 19h16"></path>
@@ -145,7 +171,16 @@
             <span class="side-tab-text">Analysis</span>
           </button>
 
-          <button id="tab-tools" class="side-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-tools" data-panel="tools" tabindex="-1">
+          <button
+            id="tab-tools"
+            class="side-tab"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-tools"
+            data-panel="tools"
+            tabindex="-1"
+          >
             <span class="side-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.7 6.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-7.8 7.8-3.3.6.6-3.3z"></path>
@@ -157,14 +192,20 @@
           </button>
         </div>
 
-        <aside class="side-panel panel" id="sidePanel" aria-label="Workspace tools">
+        <aside class="side-panel panel" id="sidePanel" aria-label="Workspace panels">
           <div class="side-panel-topbar">
             <p id="activePanelLabel" class="side-panel-label">Library panel</p>
             <button id="collapsePanelBtn" type="button" class="ghost-btn small-btn">Collapse</button>
           </div>
 
           <div class="side-panel-body">
-            <section id="panel-library" class="side-panel-view is-active" role="tabpanel" aria-labelledby="tab-library">
+            <section
+              id="panel-library"
+              class="side-panel-view is-active"
+              role="tabpanel"
+              aria-labelledby="tab-library"
+              tabindex="0"
+            >
               <div class="drawer-panel-header">
                 <div>
                   <p class="panel-kicker">Library</p>
@@ -177,7 +218,14 @@
               </div>
             </section>
 
-            <section id="panel-analysis" class="side-panel-view" role="tabpanel" aria-labelledby="tab-analysis" hidden>
+            <section
+              id="panel-analysis"
+              class="side-panel-view"
+              role="tabpanel"
+              aria-labelledby="tab-analysis"
+              tabindex="0"
+              hidden
+            >
               <div class="drawer-panel-header">
                 <div>
                   <p class="panel-kicker">Analysis</p>
@@ -190,7 +238,14 @@
               </div>
             </section>
 
-            <section id="panel-tools" class="side-panel-view" role="tabpanel" aria-labelledby="tab-tools" hidden>
+            <section
+              id="panel-tools"
+              class="side-panel-view"
+              role="tabpanel"
+              aria-labelledby="tab-tools"
+              tabindex="0"
+              hidden
+            >
               <div class="drawer-panel-header">
                 <div>
                   <p class="panel-kicker">Tools</p>
@@ -379,7 +434,7 @@
         return;
       }
 
-      openPanel(panelName);
+      openPanel(panelName, true);
     }
 
     function toggleSectionsPanel() {
@@ -780,7 +835,7 @@
 
     collapsePanelBtn.addEventListener("click", collapsePanel);
     closeToolResultsBtn.addEventListener("click", hideToolResults);
-    openLibraryBtn.addEventListener("click", () => openPanel("library"));
+    openLibraryBtn.addEventListener("click", () => openPanel("library", true));
 
     if (sectionsToggle && editorMainGrid) {
       sectionsToggle.addEventListener("click", toggleSectionsPanel);
@@ -1039,7 +1094,7 @@
 
       showToolResults(
         "Rhyming ideas",
-        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...<\/p>`
+        `<p class="empty-copy">Loading rhyme suggestions for "${escapeHtml(sourceWord)}"...</p>`
       );
 
       try {
