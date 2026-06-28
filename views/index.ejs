@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=42" />
+  <link rel="stylesheet" href="/style.css?v=43" />
 </head>
 <body>
   <div class="app-shell">
@@ -48,22 +48,29 @@
           </div>
         </div>
 
-        <div class="editor-main-grid">
-          <details class="section-builder-card sections-details compact-builder-card" open>
-            <summary class="sections-summary">
-              <div class="sections-summary-copy">
+        <div class="editor-main-grid" id="editorMainGrid">
+          <section class="section-builder-card sections-panel compact-builder-card" id="sectionsPanel">
+            <button
+              type="button"
+              class="sections-toggle"
+              id="sectionsToggle"
+              aria-expanded="true"
+              aria-controls="sectionsPanelBody"
+            >
+              <div class="sections-toggle-copy">
                 <p class="panel-kicker">Sections</p>
                 <h2>Structure</h2>
                 <p class="builder-copy">Add sections, drag them into order, and keep the full draft synced below.</p>
               </div>
+
               <span class="sections-summary-icon" aria-hidden="true">
                 <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M6 8l4 4 4-4"></path>
                 </svg>
               </span>
-            </summary>
+            </button>
 
-            <div class="sections-details-body">
+            <div class="sections-panel-body" id="sectionsPanelBody">
               <div class="section-type-row compact-type-row">
                 <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
                 <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
@@ -80,7 +87,7 @@
                 <p class="empty-copy">No sections yet. Start with a Verse or Chorus.</p>
               </div>
             </div>
-          </details>
+          </section>
 
           <section class="lyrics-panel">
             <div class="lyrics-panel-head">
@@ -263,12 +270,14 @@
       tools: document.getElementById("panel-tools")
     };
 
+    const editorMainGrid = document.getElementById("editorMainGrid");
+    const sectionsToggle = document.getElementById("sectionsToggle");
     const sectionsList = document.getElementById("sectionsList");
     const sectionsEmptyState = document.getElementById("sectionsEmptyState");
     const addSectionButtons = Array.from(document.querySelectorAll(".add-section-btn"));
 
     function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, function (match) {
+      return String(str).replace(/[&<>\"']/g, function (match) {
         const map = {
           "&": "&amp;",
           "<": "&lt;",
@@ -371,6 +380,11 @@
       }
 
       openPanel(panelName);
+    }
+
+    function toggleSectionsPanel() {
+      const collapsed = editorMainGrid.classList.toggle("sections-collapsed");
+      sectionsToggle.setAttribute("aria-expanded", String(!collapsed));
     }
 
     function showToolResults(title, html) {
@@ -767,6 +781,10 @@
     collapsePanelBtn.addEventListener("click", collapsePanel);
     closeToolResultsBtn.addEventListener("click", hideToolResults);
     openLibraryBtn.addEventListener("click", () => openPanel("library"));
+
+    if (sectionsToggle && editorMainGrid) {
+      sectionsToggle.addEventListener("click", toggleSectionsPanel);
+    }
 
     let isResizing = false;
 
