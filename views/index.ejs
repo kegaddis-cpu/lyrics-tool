@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=44" />
+  <link rel="stylesheet" href="/style.css?v=99" />
 </head>
 <body>
   <div class="app-shell">
@@ -28,6 +29,7 @@
       id="workspaceLayout"
       style="--panel-width: 360px; --rail-width: <%= railWidth || '72px' %>;"
     >
+    -- 
       <section class="panel panel-editor">
         <div class="editor-top-strip">
           <div class="field-group title-field">
@@ -35,18 +37,10 @@
             <input
               type="text"
               id="songTitle"
-              placeholder="Enter a title"
+              placeholder="Enter a title"   
               maxlength="255"
             />
           </div>
-
-          <label class="toggle-card" for="isPublic">
-            <span class="toggle-copy">
-              <strong>Public song</strong>
-              <small>Allow this song to be visible in shared views.</small>
-            </span>
-            <input type="checkbox" id="isPublic" />
-          </label>
 
           <div class="main-action-bar">
             <button id="openLibraryBtn" type="button" class="ghost-btn action-btn-main">Open</button>
@@ -935,7 +929,7 @@
     async function saveSong() {
       const title = songTitle.value.trim();
       const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
-      const publicValue = isPublic.checked;
+      const publicValue = isPublic ? isPublic.checked : false;
 
       if (!title) {
         setStatus("Please enter a song title before saving.", true, 4000);

@@ -531,14 +531,29 @@ input[type="checkbox"] {
   font-weight: 700;
 }
 
-.side-panel {
-  margin-left: 0.55rem;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+.songs-list,
+.analysis-results,
+.tools-panel-body,
+.tool-section {
+    display: grid;
+    gap: 0.55rem;
 }
+
+.side-panel-view {
+    display: none !important;
+    min-height: 0;
+    overflow: auto;
+    align-content: start;
+}
+
+    .side-panel-view.is-active {
+        display: grid !important;
+        gap: 0.55rem;
+    }
+
+    .side-panel-view[hidden] {
+        display: none !important;
+    }
 
 .workspace-layout.is-collapsed .side-panel {
   opacity: 0;
