@@ -739,3 +739,173 @@ input[type="checkbox"] {
 .sections-empty-state {
   padding-top: 0.1rem;
 }
+/* iPhone / mobile layout fix
+   Paste this at the VERY END of public/style.css.
+   It intentionally overrides the desktop grid below 768px. */
+
+@media (max-width: 767px) {
+  html,
+  body {
+    min-width: 0;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    padding: var(--pad-page);
+    grid-template-rows: auto auto;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.75rem;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .welcome-line,
+  .version-pill {
+    display: none;
+  }
+
+  .workspace-layout,
+  .workspace-layout.is-collapsed {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: var(--gap);
+  }
+
+  .panel-editor {
+    overflow: visible;
+    padding: var(--pad-panel);
+  }
+
+  .editor-top-strip {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .main-action-bar {
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editor-main-grid,
+  .editor-main-grid.sections-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap);
+  }
+
+  .sections-panel,
+  .lyrics-panel {
+    min-width: 0;
+  }
+
+  /* On phones, collapse Sections vertically rather than into a thin left rail. */
+  .editor-main-grid.sections-collapsed .sections-toggle-copy {
+    display: grid;
+  }
+
+  .editor-main-grid.sections-collapsed .sections-toggle {
+    height: auto;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 0.75rem;
+  }
+
+  .editor-main-grid.sections-collapsed .sections-summary-icon {
+    transform: rotate(-90deg);
+  }
+
+  .sections-panel-body {
+    max-height: none;
+  }
+
+  .sections-list {
+    max-height: 22rem;
+  }
+
+  .section-card-actions {
+    justify-content: flex-end;
+  }
+
+  #lyricsInput {
+    height: 22rem;
+    min-height: 22rem;
+  }
+
+  .panel-resizer,
+  .workspace-layout.is-collapsed .panel-resizer {
+    display: none;
+  }
+
+  .side-shell {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap);
+  }
+
+  .side-tab-rail {
+    flex-direction: row;
+    justify-content: stretch;
+    padding: 0.35rem;
+  }
+
+  .side-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 3.25rem;
+    padding: 0.45rem 0.25rem;
+  }
+
+  .side-tab-text {
+    font-size: var(--text-xs);
+  }
+
+  .side-panel {
+    min-width: 0;
+    max-height: min(60dvh, 34rem);
+  }
+
+  .workspace-layout.is-collapsed .side-panel {
+    display: none;
+  }
+
+  .side-panel-body {
+    max-height: calc(min(60dvh, 34rem) - 4rem);
+  }
+
+  button,
+  input[type="text"],
+  textarea {
+    font-size: max(16px, var(--text-base));
+  }
+}
+
+@media (max-width: 374px) {
+  .app-shell {
+    padding: 0.5rem;
+  }
+
+  .main-action-bar {
+    gap: 0.35rem;
+  }
+
+  .action-btn-main,
+  .small-btn {
+    min-width: 0;
+  }
+}
