@@ -1,3 +1,4 @@
+console.log("Lyrics Helper script loaded");
 (() => {
   let currentSongId = null;
   let lastSelectionStart = 0;
