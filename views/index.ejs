@@ -276,5 +276,46 @@
   </div>
 <script src="/lyrics-helper-script.js" defer></script>
 
+<script>
+  const workspaceLayout = document.getElementById("workspaceLayout");
+  const sideShell = document.querySelector(".side-shell");
+  const collapseButton = document.getElementById("collapsePanelBtn");
+  const tabs = document.querySelectorAll(".side-tab");
+  const panels = document.querySelectorAll(".side-panel-view");
+
+  collapseButton.addEventListener("click", () => {
+    const isCollapsed = sideShell.hidden;
+
+    sideShell.hidden = !isCollapsed;
+    workspaceLayout.classList.toggle("is-collapsed", !isCollapsed);
+    collapseButton.textContent = isCollapsed ? "Collapse" : "Open panel";
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      const panelName = tab.dataset.panel;
+      const targetPanel = document.getElementById(`panel-${panelName}`);
+
+      if (!targetPanel) return;
+
+      sideShell.hidden = false;
+      workspaceLayout.classList.remove("is-collapsed");
+      collapseButton.textContent = "Collapse";
+
+      tabs.forEach((item) => {
+        const active = item === tab;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-selected", String(active));
+        item.tabIndex = active ? 0 : -1;
+      });
+
+      panels.forEach((panel) => {
+        const active = panel === targetPanel;
+        panel.hidden = !active;
+        panel.classList.toggle("is-active", active);
+      });
+    });
+  });
+</script>
 </body>
 </html>
