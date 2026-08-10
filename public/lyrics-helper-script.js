@@ -1,3 +1,4 @@
+console.log("Lyrics Helper JavaScript loaded");
 <!DOCTYPE html>
 <html lang="en">
 <head>
