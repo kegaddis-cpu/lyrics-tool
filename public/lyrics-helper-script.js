@@ -259,7 +259,7 @@ function renderSections() {
     card.innerHTML = `
       <div class="section-card-head">
         <div class="section-card-title-group">
-          <span class="drag-handle" aria-hidden="true">â®â®</span>
+          <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
           <div>
             <p class="section-card-kicker">Section</p>
             <h4>${escapeHtml(section.type)} ${duplicateCount}</h4>
@@ -267,8 +267,8 @@ function renderSections() {
         </div>
 
         <div class="section-card-actions">
-          <button type="button" class="ghost-btn small-btn" data-action="up">â</button>
-          <button type="button" class="ghost-btn small-btn" data-action="down">â</button>
+          <button type="button" class="ghost-btn small-btn" data-action="up" aria-label="Move section up" title="Move up">&#8593;</button>
+          <button type="button" class="ghost-btn small-btn" data-action="down" aria-label="Move section down" title="Move down">&#8595;</button>
           <button type="button" class="ghost-btn small-btn" data-action="delete">Delete</button>
         </div>
       </div>
@@ -689,7 +689,7 @@ async function saveSong() {
     }
 
     await loadSongs();
-    setStatus(`â Song saved successfully: "${title}"`, false, 4500);
+    setStatus(`\u2713 Song saved successfully: "${title}"`, false, 4500);
   } catch (error) {
     setStatus("Could not save song.", true, 5000);
   }
