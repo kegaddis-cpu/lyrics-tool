@@ -909,3 +909,7 @@ input[type="checkbox"] {
     min-width: 0;
   }
 }
+
+/* Section card buttons: keep arrows + Delete on one row */
+.section-card-actions { flex-wrap: nowrap; flex-shrink: 0; }
+.section-card-actions [data-action="up"], .section-card-actions [data-action="down"] { min-width: 2.4rem; padding-left: 0.55rem; padding-right: 0.55rem; font-size: 1.05rem; line-height: 1; }
