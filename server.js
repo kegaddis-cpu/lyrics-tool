@@ -1,8 +1,12 @@
 const express = require("express");
 const path = require("path");
 const mysql = require("mysql2/promise");
+const crypto = require("crypto");
 
 const app = express();
+
+// Render sits behind a proxy; this lets Express see HTTPS correctly.
+app.set("trust proxy", 1);
 
 app.use(express.static("public"));
 
@@ -71,6 +75,135 @@ function validateSongId(idParam) {
   return songId;
 }
 
+// ===== Login / logout (password stored in Render as APP_PASSWORD) =====
+const APP_PASSWORD = process.env.APP_PASSWORD || "";
+const SESSION_SECRET = process.env.SESSION_SECRET || "";
+const DISPLAY_NAME = process.env.APP_DISPLAY_NAME || "MonkeyMan";
+const AUTH_COOKIE = "lt_auth";
+const SESSION_DAYS = 30;
+
+if (!APP_PASSWORD || !SESSION_SECRET) {
+  console.error("APP_PASSWORD or SESSION_SECRET is missing. Nobody can log in until both are set.");
+}
+
+function sign(value) {
+  return crypto.createHmac("sha256", SESSION_SECRET).update(value).digest("hex");
+}
+
+function safeEqual(a, b) {
+  const ha = crypto.createHash("sha256").update(String(a)).digest();
+  const hb = crypto.createHash("sha256").update(String(b)).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
+function readCookie(req, name) {
+  const header = req.headers.cookie || "";
+  for (const part of header.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) {
+      return decodeURIComponent(rest.join("="));
+    }
+  }
+  return null;
+}
+
+function isLoggedIn(req) {
+  if (!APP_PASSWORD || !SESSION_SECRET) {
+    return false;
+  }
+  const token = readCookie(req, AUTH_COOKIE);
+  if (!token) {
+    return false;
+  }
+  const [expires, signature] = token.split(".");
+  if (!expires || !signature || Number(expires) < Date.now()) {
+    return false;
+  }
+  return safeEqual(signature, sign(expires));
+}
+
+function cookieOptions(req) {
+  return {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: req.secure,
+    path: "/"
+  };
+}
+
+// Simple brute-force protection: 10 wrong passwords per 15 minutes per address.
+const failedLogins = new Map();
+const MAX_FAILED = 10;
+const LOCK_WINDOW_MS = 15 * 60 * 1000;
+
+function tooManyFailures(ip) {
+  const entry = failedLogins.get(ip);
+  if (!entry) {
+    return false;
+  }
+  if (Date.now() - entry.first > LOCK_WINDOW_MS) {
+    failedLogins.delete(ip);
+    return false;
+  }
+  return entry.count >= MAX_FAILED;
+}
+
+function recordFailure(ip) {
+  const entry = failedLogins.get(ip);
+  if (!entry || Date.now() - entry.first > LOCK_WINDOW_MS) {
+    failedLogins.set(ip, { count: 1, first: Date.now() });
+  } else {
+    entry.count += 1;
+  }
+}
+
+app.get("/login", (req, res) => {
+  if (isLoggedIn(req)) {
+    return res.redirect("/");
+  }
+  res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+app.post("/login", (req, res) => {
+  const ip = req.ip || "unknown";
+
+  if (tooManyFailures(ip)) {
+    return res.redirect("/login?error=locked");
+  }
+
+  const password = String(req.body.password || "");
+
+  if (!APP_PASSWORD || !SESSION_SECRET || !safeEqual(password, APP_PASSWORD)) {
+    recordFailure(ip);
+    return res.redirect("/login?error=1");
+  }
+
+  failedLogins.delete(ip);
+  const expires = String(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  res.cookie(AUTH_COOKIE, `${expires}.${sign(expires)}`, {
+    ...cookieOptions(req),
+    maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000
+  });
+  res.redirect("/");
+});
+
+app.post("/logout", (req, res) => {
+  res.clearCookie(AUTH_COOKIE, cookieOptions(req));
+  res.redirect("/login");
+});
+
+// Everything below this line requires being logged in (except /health).
+app.use((req, res, next) => {
+  if (req.path === "/health" || isLoggedIn(req)) {
+    return next();
+  }
+  if (req.path.startsWith("/api/")) {
+    return res.status(401).json({ error: "Please log in." });
+  }
+  return res.redirect("/login");
+});
+// ===== End login / logout =====
+
 app.get("/health", (req, res) => {
   res.status(200).json({
     ok: true,
@@ -81,14 +214,10 @@ app.get("/health", (req, res) => {
 
 app.get("/", (req, res) => {
   res.render("index", {
-    username: "MonkeyMan",
+    username: DISPLAY_NAME,
     pageVersion: "INDEX_V6_FULL_UI",
     railWidth: "72px"
   });
-});
-
-app.post("/logout", (req, res) => {
-  res.redirect("/");
 });
 
 app.get("/api/songs", ensureDb, async (req, res, next) => {
