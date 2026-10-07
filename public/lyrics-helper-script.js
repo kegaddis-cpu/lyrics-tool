@@ -8,6 +8,15 @@ let nextSectionId = 1;
 let draggingSectionId = null;
 let statusClearTimer = null;
 
+// Autosave state
+const AUTOSAVE_DELAY_MS = 1000;
+let autosaveTimer = null;
+let isSaving = false;
+let saveQueued = false;
+let hasUnsavedChanges = false;
+let titlePromptShown = false;
+let lastSavedTitle = "";
+
 const DEFAULT_PANEL_WIDTH = 360;
 const MIN_PANEL_WIDTH = 280;
 const MAX_PANEL_WIDTH = 560;
@@ -90,6 +99,49 @@ function setStatus(message, isError = false, autoClearMs = 0) {
       clearStatusMessage();
     }, autoClearMs);
   }
+}
+
+function markDirty() {
+  hasUnsavedChanges = true;
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(() => {
+    autosaveTimer = null;
+    saveSong({ auto: true });
+  }, AUTOSAVE_DELAY_MS);
+}
+
+async function flushAutosave() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  while (isSaving) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (hasUnsavedChanges && songTitle.value.trim()) {
+    await saveSong({ auto: true });
+  }
+  if (hasUnsavedChanges) {
+    return window.confirm("This song has changes that aren't saved (it may need a title). Discard them?");
+  }
+  return true;
+}
+
+function cancelAutosave() {
+  if (autosaveTimer) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+  }
+  hasUnsavedChanges = false;
+  titlePromptShown = false;
+}
+
+function redirectIfLoggedOut(response) {
+  if (response.status === 401) {
+    window.location.href = "/login";
+    return true;
+  }
+  return false;
 }
 
 function clampPanelWidth(width) {
@@ -210,6 +262,7 @@ function createSection(type) {
 
   renderSections();
   syncLyricsFromSections();
+  markDirty();
   setStatus(`${type} section added.`, false, 2200);
 }
 
@@ -218,12 +271,14 @@ function updateSectionText(id, value) {
   if (!section) return;
   section.text = value;
   syncLyricsFromSections();
+  markDirty();
 }
 
 function removeSection(id) {
   sections = sections.filter((item) => item.id !== id);
   renderSections();
   syncLyricsFromSections();
+  markDirty();
   setStatus("Section removed.", false, 2200);
 }
 
@@ -240,6 +295,7 @@ function moveSection(id, direction) {
 
   renderSections();
   syncLyricsFromSections();
+  markDirty();
 }
 
 function renderSections() {
@@ -327,6 +383,7 @@ function renderSections() {
 
       renderSections();
       syncLyricsFromSections();
+      markDirty();
       setStatus("Section order updated.", false, 2200);
     });
 
@@ -405,6 +462,13 @@ lyricsInput.addEventListener("blur", () => {
   }
 });
 
+lyricsInput.addEventListener("input", markDirty);
+
+songTitle.addEventListener("input", () => {
+  if (songTitle.value.trim()) titlePromptShown = false;
+  markDirty();
+});
+
 addSectionButtons.forEach((button) => {
   button.addEventListener("click", () => {
     createSection(button.dataset.type);
@@ -447,6 +511,7 @@ function insertWordIntoEditor(word) {
   lyricsInput.focus();
   lyricsInput.setSelectionRange(cursor, cursor);
   rememberSelection();
+  markDirty();
 
   const parsed = parseSectionsFromLyrics(lyricsInput.value);
   if (parsed.length) {
@@ -587,6 +652,7 @@ async function loadSongs() {
 
   try {
     const response = await fetch("/api/songs");
+    if (redirectIfLoggedOut(response)) return;
     const data = await response.json();
 
     if (!response.ok) {
@@ -624,8 +690,11 @@ async function loadSongs() {
 async function openSong(songId, event) {
   if (event) event.stopPropagation();
 
+  if (!(await flushAutosave())) return;
+
   try {
     const response = await fetch(`/api/songs/${songId}`);
+    if (redirectIfLoggedOut(response)) return;
     const data = await response.json();
 
     if (!response.ok) {
@@ -641,6 +710,8 @@ async function openSong(songId, event) {
     const parsed = parseSectionsFromLyrics(data.song.lyrics || "");
     sections = parsed.length ? parsed : [];
     renderSections();
+    cancelAutosave();
+    lastSavedTitle = data.song.title || "";
 
     setStatus(`Loaded "${data.song.title}".`, false, 2800);
     openPanel("library");
@@ -649,19 +720,42 @@ async function openSong(songId, event) {
   }
 }
 
-async function saveSong() {
+async function saveSong(options = {}) {
+  const auto = options.auto === true;
   const title = songTitle.value.trim();
-  const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
-  const publicValue = isPublic ? isPublic.checked : false;
 
   if (!title) {
-    setStatus("Please enter a song title before saving.", true, 4000);
-    songTitle.focus();
+    // Stop the save, put the cursor in the title box, and ask for a title.
+    // Autosave only asks once so it doesn't keep pulling you out of the lyrics.
+    if (!auto || !titlePromptShown) {
+      titlePromptShown = true;
+      setStatus("Please enter a song title to save.", true, 4000);
+      songTitle.focus();
+    }
     return;
   }
 
-  lyricsInput.value = lyrics;
-  setStatus("Saving song...", false);
+  if (isSaving) {
+    saveQueued = true;
+    return;
+  }
+
+  if (!auto) {
+    if (autosaveTimer) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+    }
+    lyricsInput.value = lyricsInput.value.trim();
+  }
+
+  const lyrics = lyricsInput.value;
+  const publicValue = isPublic ? isPublic.checked : false;
+  const wasNewSong = !currentSongId;
+  const titleChanged = title !== lastSavedTitle;
+
+  isSaving = true;
+  saveQueued = false;
+  setStatus(auto ? "Saving..." : "Saving song...", false);
 
   try {
     const url = currentSongId ? `/api/songs/${currentSongId}` : "/api/songs";
@@ -677,6 +771,11 @@ async function saveSong() {
       })
     });
 
+    if (response.status === 401) {
+      setStatus("You've been logged out, so this wasn't saved. Copy your lyrics somewhere safe, then refresh the page and log in.", true);
+      return;
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -688,10 +787,30 @@ async function saveSong() {
       currentSongId = data.songId;
     }
 
-    await loadSongs();
-    setStatus(`\u2713 Song saved successfully: "${title}"`, false, 4500);
+    lastSavedTitle = title;
+
+    // Only mark as saved if nothing changed while the save was in progress.
+    if (songTitle.value.trim() === title && lyricsInput.value === lyrics) {
+      hasUnsavedChanges = false;
+    }
+
+    if (!auto || wasNewSong || titleChanged) {
+      await loadSongs();
+    }
+
+    if (auto) {
+      setStatus("\u2713 Saved", false, 2000);
+    } else {
+      setStatus(`\u2713 Song saved successfully: "${title}"`, false, 4500);
+    }
   } catch (error) {
-    setStatus("Could not save song.", true, 5000);
+    setStatus(auto ? "Autosave failed. Check your connection." : "Could not save song.", true, 5000);
+  } finally {
+    isSaving = false;
+    if (saveQueued) {
+      saveQueued = false;
+      if (hasUnsavedChanges) markDirty();
+    }
   }
 }
 
@@ -706,6 +825,7 @@ async function deleteSong(songId, event) {
       method: "DELETE"
     });
 
+    if (redirectIfLoggedOut(response)) return;
     const data = await response.json();
 
     if (!response.ok) {
@@ -714,7 +834,9 @@ async function deleteSong(songId, event) {
     }
 
     if (currentSongId === songId) {
+      cancelAutosave();
       currentSongId = null;
+      lastSavedTitle = "";
       songTitle.value = "";
       lyricsInput.value = "";
       if (isPublic) isPublic.checked = false;
@@ -731,7 +853,10 @@ async function deleteSong(songId, event) {
   }
 }
 
-function resetEditor() {
+async function resetEditor() {
+  if (!(await flushAutosave())) return;
+  cancelAutosave();
+  lastSavedTitle = "";
   currentSongId = null;
   songTitle.value = "";
   lyricsInput.value = "";
@@ -880,7 +1005,23 @@ async function showRandomIdeas() {
 }
 
 analyzeBtn.addEventListener("click", analyzeLyrics);
-saveSongBtn.addEventListener("click", saveSong);
+saveSongBtn.addEventListener("click", () => saveSong());
+
+// Ctrl+S / Cmd+S saves right away
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+    saveSong();
+  }
+});
+
+// Warn before leaving the page if something hasn't saved yet
+window.addEventListener("beforeunload", (event) => {
+  if (hasUnsavedChanges || isSaving) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
 newSongBtn.addEventListener("click", resetEditor);
 rhymingBtn.addEventListener("click", showRhymes);
 randomBtn.addEventListener("click", showRandomIdeas);
