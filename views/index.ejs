@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lyrics Helper</title>
-  <link rel="stylesheet" href="/style.css?v=101" />
+  <link rel="stylesheet" href="/style.css?v=102" />
 </head>
 <body>
   <div class="app-shell">
@@ -61,7 +61,7 @@
               <div class="sections-toggle-copy">
                 <p class="panel-kicker">Sections</p>
                 <h2>Structure</h2>
-                <p class="builder-copy">Add sections, drag them into order, and keep the full draft synced below.</p>
+                <p class="builder-copy">Drag a label by its dots to reorder. Tap a label to jump to it.</p>
               </div>
 
               <span class="sections-summary-icon" aria-hidden="true">
@@ -72,20 +72,11 @@
             </button>
 
             <div class="sections-panel-body" id="sectionsPanelBody">
-              <div class="section-type-row compact-type-row">
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Verse">+ Verse</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Pre-Chorus">+ Pre-Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Chorus">+ Chorus</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Bridge">+ Bridge</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Hook">+ Hook</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Intro">+ Intro</button>
-                <button type="button" class="secondary-btn small-btn add-section-btn" data-type="Outro">+ Outro</button>
-              </div>
 
               <div id="sectionsList" class="sections-list sections-list-compact"></div>
 
               <div id="sectionsEmptyState" class="sections-empty-state">
-                <p class="empty-copy">No sections yet. Start with a Verse or Chorus.</p>
+                <p class="empty-copy">No sections yet. Use "Add section" above the editor.</p>
               </div>
             </div>
           </section>
@@ -99,11 +90,25 @@
               <p id="saveStatus" class="status-line" aria-live="polite"></p>
             </div>
 
+            <div class="add-section-row">
+              <label for="addSectionSelect" class="visually-hidden">Add section at cursor</label>
+              <select id="addSectionSelect" class="add-section-select">
+                <option value="">+ Add section at cursor</option>
+                <option value="Verse">Verse</option>
+                <option value="Pre-Chorus">Pre-Chorus</option>
+                <option value="Chorus">Chorus</option>
+                <option value="Bridge">Bridge</option>
+                <option value="Hook">Hook</option>
+                <option value="Intro">Intro</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+
             <div class="field-group editor-lyrics-group compact-lyrics-group">
               <label for="lyricsInput">Full lyrics</label>
               <textarea
                 id="lyricsInput"
-                placeholder="Write your lyrics here, or build them from sections above..."
+                placeholder="Write your lyrics here. Use Add section to drop in a [Verse] or [Chorus] label."
                 rows="16"
               ></textarea>
             </div>
@@ -274,7 +279,7 @@
       </div>
     </main>
   </div>
-<script src="/lyrics-helper-script.js?v=103" defer></script>
+<script src="/lyrics-helper-script.js?v=104" defer></script>
 
 <script>
   const workspaceLayout = document.getElementById("workspaceLayout");

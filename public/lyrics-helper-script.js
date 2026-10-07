@@ -3,9 +3,8 @@ console.log("Lyrics Helper recovered script loaded");
 let currentSongId = null;
 let lastSelectionStart = 0;
 let lastSelectionEnd = 0;
-let sections = [];
-let nextSectionId = 1;
-let draggingSectionId = null;
+let undoSnapshot = null;
+let undoTimer = null;
 let statusClearTimer = null;
 
 // Autosave state
@@ -55,7 +54,7 @@ const editorMainGrid = document.getElementById("editorMainGrid");
 const sectionsToggle = document.getElementById("sectionsToggle");
 const sectionsList = document.getElementById("sectionsList");
 const sectionsEmptyState = document.getElementById("sectionsEmptyState");
-const addSectionButtons = Array.from(document.querySelectorAll(".add-section-btn"));
+const addSectionSelect = document.getElementById("addSectionSelect");
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>\"']/g, function (match) {
@@ -75,7 +74,7 @@ function rememberSelection() {
   lastSelectionEnd = lyricsInput.selectionEnd || 0;
 }
 
-["select", "click", "keyup", "mouseup", "focus"].forEach((eventName) => {
+["select", "click", "keyup", "mouseup", "focus", "input"].forEach((eventName) => {
   lyricsInput.addEventListener(eventName, rememberSelection);
 });
 
@@ -241,253 +240,299 @@ function hideToolResults() {
   toolEmptyState.hidden = false;
 }
 
-function buildLyricsFromSections() {
-  if (!sections.length) return lyricsInput.value.trim();
+// ===== Sections =====
+// The lyrics editor is the only place text lives. A section is a label line
+// like [Verse 1] in the editor. The Sections area shows those labels so they
+// can be dragged into a new order.
 
-  return sections
-    .map((section, index) => {
-      const countForType = sections
-        .slice(0, index + 1)
-        .filter((item) => item.type === section.type).length;
+const SECTION_HEADER_RE = /^\s*\[(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)(?:\s+\d+)?\]\s*$/i;
 
-      const label = `[${section.type} ${countForType}]`;
-      const text = section.text.trim();
-
-      return text ? `${label}\n${text}` : `${label}`;
-    })
-    .join("\n\n")
-    .trim();
+function normalizeSectionType(raw) {
+  if (/^pre[- ]chorus$/i.test(raw)) return "Pre-Chorus";
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 }
 
-function syncLyricsFromSections() {
-  const currentStart = lyricsInput.selectionStart || 0;
-  const currentEnd = lyricsInput.selectionEnd || 0;
-  lyricsInput.value = buildLyricsFromSections();
-  const nextCursor = Math.min(lyricsInput.value.length, currentStart);
-  lyricsInput.setSelectionRange(nextCursor, Math.min(lyricsInput.value.length, currentEnd));
-  rememberSelection();
-}
-
-function createSection(type) {
-  sections.push({
-    id: nextSectionId++,
-    type,
-    text: ""
-  });
-
-  renderSections();
-  syncLyricsFromSections();
-  markDirty();
-  setStatus(`${type} section added.`, false, 2200);
-}
-
-function updateSectionText(id, value) {
-  const section = sections.find((item) => item.id === id);
-  if (!section) return;
-  section.text = value;
-  syncLyricsFromSections();
-  markDirty();
-}
-
-function removeSection(id) {
-  sections = sections.filter((item) => item.id !== id);
-  renderSections();
-  syncLyricsFromSections();
-  markDirty();
-  setStatus("Section removed.", false, 2200);
-}
-
-function moveSection(id, direction) {
-  const index = sections.findIndex((item) => item.id === id);
-  if (index === -1) return;
-
-  const targetIndex = direction === "up" ? index - 1 : index + 1;
-  if (targetIndex < 0 || targetIndex >= sections.length) return;
-
-  const temp = sections[index];
-  sections[index] = sections[targetIndex];
-  sections[targetIndex] = temp;
-
-  renderSections();
-  syncLyricsFromSections();
-  markDirty();
-}
-
-function renderSections() {
-  sectionsEmptyState.hidden = sections.length > 0;
-  sectionsList.innerHTML = "";
-
-  sections.forEach((section, index) => {
-    const duplicateCount = sections
-      .slice(0, index + 1)
-      .filter((item) => item.type === section.type).length;
-
-    const card = document.createElement("article");
-    card.className = "section-card";
-    card.draggable = true;
-    card.dataset.sectionId = String(section.id);
-
-    card.innerHTML = `
-      <div class="section-card-head">
-        <div class="section-card-title-group">
-          <span class="drag-handle" aria-hidden="true">&#8942;&#8942;</span>
-          <div>
-            <p class="section-card-kicker">Section</p>
-            <h4>${escapeHtml(section.type)} ${duplicateCount}</h4>
-          </div>
-        </div>
-
-        <div class="section-card-actions">
-          <button type="button" class="ghost-btn small-btn" data-action="up" aria-label="Move section up" title="Move up">&#8593;</button>
-          <button type="button" class="ghost-btn small-btn" data-action="down" aria-label="Move section down" title="Move down">&#8595;</button>
-          <button type="button" class="ghost-btn small-btn" data-action="delete">Delete</button>
-        </div>
-      </div>
-
-      <textarea
-        class="section-textarea"
-        placeholder="Write ${escapeHtml(section.type.toLowerCase())} lyrics here..."
-      >${escapeHtml(section.text)}</textarea>
-    `;
-
-    const textarea = card.querySelector(".section-textarea");
-    textarea.addEventListener("input", (event) => {
-      updateSectionText(section.id, event.target.value);
-    });
-
-    card.querySelector('[data-action="up"]').addEventListener("click", () => moveSection(section.id, "up"));
-    card.querySelector('[data-action="down"]').addEventListener("click", () => moveSection(section.id, "down"));
-    card.querySelector('[data-action="delete"]').addEventListener("click", () => removeSection(section.id));
-
-    card.addEventListener("dragstart", () => {
-      draggingSectionId = section.id;
-      card.classList.add("is-dragging");
-    });
-
-    card.addEventListener("dragend", () => {
-      draggingSectionId = null;
-      card.classList.remove("is-dragging");
-      sectionsList.querySelectorAll(".section-card").forEach((item) => {
-        item.classList.remove("drag-over");
-      });
-    });
-
-    card.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      const currentCard = event.currentTarget;
-      if (!currentCard || Number(currentCard.dataset.sectionId) === draggingSectionId) return;
-
-      sectionsList.querySelectorAll(".section-card").forEach((item) => {
-        item.classList.remove("drag-over");
-      });
-
-      currentCard.classList.add("drag-over");
-    });
-
-    card.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const targetId = Number(event.currentTarget.dataset.sectionId);
-      if (!draggingSectionId || draggingSectionId === targetId) return;
-
-      const fromIndex = sections.findIndex((item) => item.id === draggingSectionId);
-      const toIndex = sections.findIndex((item) => item.id === targetId);
-      if (fromIndex === -1 || toIndex === -1) return;
-
-      const [movedSection] = sections.splice(fromIndex, 1);
-      sections.splice(toIndex, 0, movedSection);
-
-      renderSections();
-      syncLyricsFromSections();
-      markDirty();
-      setStatus("Section order updated.", false, 2200);
-    });
-
-    sectionsList.appendChild(card);
-  });
-}
-
-function parseSectionsFromLyrics(text) {
+// Split the editor text into: text before the first label, then one block per label.
+function splitIntoBlocks(text) {
   const lines = String(text || "").split(/\r?\n/);
-  const headerRegex = /^\s*\[(verse|chorus|pre-chorus|pre chorus|bridge|hook|intro|outro)(?:\s+\d+)?\]\s*$/i;
-
-  const parsed = [];
+  const preamble = [];
+  const blocks = [];
   let current = null;
 
-  for (const rawLine of lines) {
-    const trimmed = rawLine.trim();
-    const headerMatch = trimmed.match(headerRegex);
-
-    if (headerMatch) {
-      if (current) {
-        current.text = current.lines.join("\n").trim();
-        delete current.lines;
-        parsed.push(current);
-      }
-
-      let type = headerMatch[1];
-      if (/^pre chorus$/i.test(type) || /^pre-chorus$/i.test(type)) {
-        type = "Pre-Chorus";
-      } else {
-        type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
-      }
-
-      current = {
-        id: nextSectionId++,
-        type,
-        lines: []
-      };
-      continue;
+  for (const line of lines) {
+    const match = line.match(SECTION_HEADER_RE);
+    if (match) {
+      current = { type: normalizeSectionType(match[1]), lines: [line] };
+      blocks.push(current);
+    } else if (current) {
+      current.lines.push(line);
+    } else {
+      preamble.push(line);
     }
-
-    if (!current) {
-      current = {
-        id: nextSectionId++,
-        type: "Verse",
-        lines: []
-      };
-    }
-
-    current.lines.push(rawLine);
   }
 
-  if (current) {
-    current.text = current.lines.join("\n").trim();
-    delete current.lines;
-    parsed.push(current);
-  }
-
-  return parsed.filter((item) => item.text || item.type);
+  return { preamble, blocks };
 }
 
-lyricsInput.addEventListener("blur", () => {
-  const text = lyricsInput.value.trim();
+function trimBlankLines(lines) {
+  const copy = lines.slice();
+  while (copy.length && !copy[0].trim()) copy.shift();
+  while (copy.length && !copy[copy.length - 1].trim()) copy.pop();
+  return copy;
+}
 
-  if (!text) {
-    if (sections.length) {
-      sections = [];
-      renderSections();
-    }
+function joinBlocks(preamble, blocks) {
+  const parts = [];
+  const pre = trimBlankLines(preamble).join("\n");
+  if (pre) parts.push(pre);
+  blocks.forEach((block) => parts.push(trimBlankLines(block.lines).join("\n")));
+  return parts.join("\n\n");
+}
+
+// Number labels in order: [Verse 1], [Chorus 1], [Verse 2]...
+function renumberSectionLabels(text) {
+  const counts = {};
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const match = line.match(SECTION_HEADER_RE);
+      if (!match) return line;
+      const type = normalizeSectionType(match[1]);
+      counts[type] = (counts[type] || 0) + 1;
+      return `[${type} ${counts[type]}]`;
+    })
+    .join("\n");
+}
+
+function lineStartOffset(text, lineIndex) {
+  const lines = text.split("\n");
+  let offset = 0;
+  for (let i = 0; i < lineIndex && i < lines.length; i += 1) {
+    offset += lines[i].length + 1;
+  }
+  return offset;
+}
+
+function setEditorText(text, cursor) {
+  lyricsInput.value = text;
+  if (typeof cursor === "number") {
+    const pos = Math.max(0, Math.min(text.length, cursor));
+    lyricsInput.setSelectionRange(pos, pos);
+    lastSelectionStart = pos;
+    lastSelectionEnd = pos;
+  }
+  renderSections();
+  markDirty();
+}
+
+// ----- Undo (one step) -----
+function takeUndoSnapshot() {
+  undoSnapshot = {
+    value: lyricsInput.value,
+    start: lyricsInput.selectionStart || 0,
+    end: lyricsInput.selectionEnd || 0
+  };
+}
+
+const undoToast = document.createElement("div");
+undoToast.className = "undo-toast";
+undoToast.hidden = true;
+undoToast.innerHTML = '<span class="undo-toast-text"></span><button type="button" class="undo-toast-btn">Undo</button>';
+document.body.appendChild(undoToast);
+
+function positionUndoToast() {
+  const vv = window.visualViewport;
+  undoToast.style.top = vv ? `${Math.round(vv.offsetTop) + 64}px` : "";
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", positionUndoToast);
+  window.visualViewport.addEventListener("scroll", positionUndoToast);
+}
+
+function showUndo(message) {
+  undoToast.querySelector(".undo-toast-text").textContent = message;
+  positionUndoToast();
+  undoToast.hidden = false;
+  if (undoTimer) clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 6000);
+}
+
+function hideUndo() {
+  undoToast.hidden = true;
+  if (undoTimer) {
+    clearTimeout(undoTimer);
+    undoTimer = null;
+  }
+}
+
+function undoLastSectionChange() {
+  if (!undoSnapshot) return;
+  const snap = undoSnapshot;
+  undoSnapshot = null;
+  hideUndo();
+  lyricsInput.value = snap.value;
+  lyricsInput.setSelectionRange(snap.start, snap.end);
+  lastSelectionStart = snap.start;
+  lastSelectionEnd = snap.end;
+  renderSections();
+  markDirty();
+  setStatus("Undone.", false, 2000);
+}
+
+undoToast.querySelector(".undo-toast-btn").addEventListener("click", undoLastSectionChange);
+
+// ----- Add a section label at the cursor -----
+function insertSectionAtCursor(type) {
+  takeUndoSnapshot();
+
+  const value = lyricsInput.value;
+  let pos = Math.max(0, Math.min(value.length, lastSelectionStart || 0));
+  if (document.activeElement === lyricsInput) pos = lyricsInput.selectionStart || 0;
+
+  // If the cursor is in the middle of a line, put the label after that line
+  // so a lyric line never gets split in two.
+  let insertAt = pos;
+  const atLineStart = pos === 0 || value[pos - 1] === "\n";
+  if (!atLineStart) {
+    const lineEnd = value.indexOf("\n", pos);
+    insertAt = lineEnd === -1 ? value.length : lineEnd;
+  }
+
+  let before = value.slice(0, insertAt);
+  const after = value.slice(insertAt).replace(/^\n/, "");
+
+  if (before && !before.endsWith("\n")) before += "\n";
+  if (before.trim() && !before.endsWith("\n\n")) before += "\n";
+
+  const labelLineIndex = before.split("\n").length - 1;
+  const text = renumberSectionLabels(`${before}[${type}]\n${after}`);
+  const cursor = lineStartOffset(text, labelLineIndex + 1);
+
+  lyricsInput.focus();
+  setEditorText(text, cursor);
+
+  const label = text.split("\n")[labelLineIndex].replace(/[\[\]]/g, "");
+  showUndo(`${label} added`);
+}
+
+if (addSectionSelect) {
+  // Remember the cursor before the dropdown takes focus.
+  addSectionSelect.addEventListener("pointerdown", rememberSelection);
+  addSectionSelect.addEventListener("change", () => {
+    const type = addSectionSelect.value;
+    addSectionSelect.value = "";
+    if (type) insertSectionAtCursor(type);
+  });
+}
+
+// ----- Reorder sections -----
+function reorderSections(newOrder) {
+  const { preamble, blocks } = splitIntoBlocks(lyricsInput.value);
+  if (newOrder.length !== blocks.length) return;
+  if (newOrder.every((oldIndex, i) => oldIndex === i)) {
+    renderSections();
     return;
   }
 
-  const parsed = parseSectionsFromLyrics(text);
-  if (parsed.length) {
-    sections = parsed;
-    renderSections();
+  takeUndoSnapshot();
+  const reordered = newOrder.map((oldIndex) => blocks[oldIndex]);
+  setEditorText(renumberSectionLabels(joinBlocks(preamble, reordered)));
+  showUndo("Sections reordered");
+}
+
+// Tap a label to jump to that section in the editor.
+function jumpToSection(blockIndex) {
+  const lines = lyricsInput.value.split("\n");
+  let count = -1;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (SECTION_HEADER_RE.test(lines[i])) {
+      count += 1;
+      if (count === blockIndex) {
+        const pos = lineStartOffset(lyricsInput.value, Math.min(i + 1, lines.length - 1));
+        lyricsInput.focus();
+        lyricsInput.setSelectionRange(pos, pos);
+        rememberSelection();
+        const lineHeight = parseFloat(getComputedStyle(lyricsInput).lineHeight) || 20;
+        lyricsInput.scrollTop = Math.max(0, i * lineHeight - lineHeight);
+        return;
+      }
+    }
   }
-});
+}
+
+// ----- Draw the label chips -----
+function renderSections() {
+  const { blocks } = splitIntoBlocks(lyricsInput.value);
+  sectionsEmptyState.hidden = blocks.length > 0;
+  sectionsList.innerHTML = "";
+
+  blocks.forEach((block, index) => {
+    const chip = document.createElement("div");
+    chip.className = "section-chip";
+    chip.dataset.index = String(index);
+    chip.innerHTML = `
+      <span class="section-chip-handle" aria-hidden="true">&#8942;&#8942;</span>
+      <button type="button" class="section-chip-label" title="Go to this section">${escapeHtml(block.lines[0].trim().replace(/[\[\]]/g, ""))}</button>
+    `;
+    chip.querySelector(".section-chip-label").addEventListener("click", () => jumpToSection(index));
+    attachChipDrag(chip);
+    sectionsList.appendChild(chip);
+  });
+}
+
+// Drag works with mouse, finger, or pen. Grab the dotted handle.
+// Moves are tracked on the whole window because the chip moves around
+// in the list while you drag it.
+let chipDrag = null;
+
+function attachChipDrag(chip) {
+  const handle = chip.querySelector(".section-chip-handle");
+
+  handle.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    chipDrag = { chip, pointerId: event.pointerId };
+    chip.classList.add("is-dragging");
+    sectionsList.classList.add("is-sorting");
+  });
+}
+
+window.addEventListener("pointermove", (event) => {
+  if (!chipDrag || chipDrag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const chip = chipDrag.chip;
+  const target = document.elementFromPoint(event.clientX, event.clientY);
+  const overChip = target && target.closest(".section-chip");
+  if (!overChip || overChip === chip || overChip.parentElement !== sectionsList) return;
+
+  const rect = overChip.getBoundingClientRect();
+  const sameRow = Math.abs(rect.top - chip.getBoundingClientRect().top) < rect.height / 2;
+  const placeAfter = sameRow
+    ? event.clientX > rect.left + rect.width / 2
+    : event.clientY > rect.top + rect.height / 2;
+
+  sectionsList.insertBefore(chip, placeAfter ? overChip.nextSibling : overChip);
+}, { passive: false });
+
+function finishChipDrag(event) {
+  if (!chipDrag || chipDrag.pointerId !== event.pointerId) return;
+  chipDrag.chip.classList.remove("is-dragging");
+  chipDrag = null;
+  sectionsList.classList.remove("is-sorting");
+  const newOrder = Array.from(sectionsList.querySelectorAll(".section-chip")).map((item) => Number(item.dataset.index));
+  reorderSections(newOrder);
+}
+
+window.addEventListener("pointerup", finishChipDrag);
+window.addEventListener("pointercancel", finishChipDrag);
+
+lyricsInput.addEventListener("input", renderSections);
 
 lyricsInput.addEventListener("input", markDirty);
 
 songTitle.addEventListener("input", () => {
   if (songTitle.value.trim()) titlePromptShown = false;
   markDirty();
-});
-
-addSectionButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    createSection(button.dataset.type);
-  });
 });
 
 function getSelectionOrLastWord() {
@@ -527,12 +572,7 @@ function insertWordIntoEditor(word) {
   lyricsInput.setSelectionRange(cursor, cursor);
   rememberSelection();
   markDirty();
-
-  const parsed = parseSectionsFromLyrics(lyricsInput.value);
-  if (parsed.length) {
-    sections = parsed;
-    renderSections();
-  }
+  renderSections();
 }
 
 function getFallbackRhymes(word) {
@@ -722,9 +762,9 @@ async function openSong(songId, event) {
     lyricsInput.value = data.song.lyrics || "";
     if (isPublic) isPublic.checked = !!data.song.is_public;
 
-    const parsed = parseSectionsFromLyrics(data.song.lyrics || "");
-    sections = parsed.length ? parsed : [];
     renderSections();
+    hideUndo();
+    undoSnapshot = null;
     cancelAutosave();
     lastSavedTitle = data.song.title || "";
 
@@ -857,8 +897,9 @@ async function deleteSong(songId, event) {
       songTitle.value = "";
       lyricsInput.value = "";
       if (isPublic) isPublic.checked = false;
-      sections = [];
       renderSections();
+      hideUndo();
+      undoSnapshot = null;
       analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
       hideToolResults();
     }
@@ -878,16 +919,16 @@ async function resetEditor() {
   songTitle.value = "";
   lyricsInput.value = "";
   if (isPublic) isPublic.checked = false;
-  sections = [];
   renderSections();
+  hideUndo();
+  undoSnapshot = null;
   analysisResults.innerHTML = '<p class="empty-copy">No analysis yet.</p>';
   hideToolResults();
   clearStatusMessage();
 }
 
 async function analyzeLyrics() {
-  const lyrics = sections.length ? buildLyricsFromSections() : lyricsInput.value.trim();
-  lyricsInput.value = lyrics;
+  const lyrics = lyricsInput.value.trim();
 
   try {
     const response = await fetch("/api/analyze", {
