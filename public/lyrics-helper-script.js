@@ -725,12 +725,14 @@ async function saveSong(options = {}) {
   const title = songTitle.value.trim();
 
   if (!title) {
-    // Stop the save, put the cursor in the title box, and ask for a title.
-    // Autosave only asks once so it doesn't keep pulling you out of the lyrics.
-    if (!auto || !titlePromptShown) {
-      titlePromptShown = true;
+    // Save button / Ctrl+S: stop, move the cursor to the title box, and ask.
+    // Autosave: just show a reminder once. Never move the cursor while typing.
+    if (!auto) {
       setStatus("Please enter a song title to save.", true, 4000);
       songTitle.focus();
+    } else if (!titlePromptShown) {
+      titlePromptShown = true;
+      setStatus("Add a title to turn on autosave.", true, 4000);
     }
     return;
   }
