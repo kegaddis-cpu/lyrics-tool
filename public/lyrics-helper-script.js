@@ -84,7 +84,22 @@ function clearStatusMessage() {
   saveStatus.classList.remove("error", "success");
 }
 
+// Keep the status banner at the top of what you can see,
+// even when the phone keyboard is open and the page has shifted.
+document.body.appendChild(saveStatus);
+
+function positionStatusBanner() {
+  const vv = window.visualViewport;
+  saveStatus.style.top = vv ? `${Math.round(vv.offsetTop) + 12}px` : "";
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", positionStatusBanner);
+  window.visualViewport.addEventListener("scroll", positionStatusBanner);
+}
+
 function setStatus(message, isError = false, autoClearMs = 0) {
+  positionStatusBanner();
   if (statusClearTimer) {
     clearTimeout(statusClearTimer);
     statusClearTimer = null;
