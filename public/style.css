@@ -913,3 +913,15 @@ input[type="checkbox"] {
 /* Section card buttons: keep arrows + Delete on one row */
 .section-card-actions { flex-wrap: nowrap; flex-shrink: 0; }
 .section-card-actions [data-action="up"], .section-card-actions [data-action="down"] { min-width: 2.4rem; padding-left: 0.55rem; padding-right: 0.55rem; font-size: 1.05rem; line-height: 1; }
+
+/* Save/status message: floating banner at the top of the screen */
+#saveStatus { position: fixed; top: max(0.75rem, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 1000; max-width: min(92vw, 32rem); min-height: 0; margin: 0; padding: 0.55rem 1.1rem; border-radius: 999px; border: 1px solid #e3ddd3; background: #ffffff; color: #333333; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); text-align: center; font-size: 0.95rem; pointer-events: none; }
+#saveStatus:empty { display: none; }
+#saveStatus.success { color: var(--primary); }
+#saveStatus.error { color: var(--danger); background: #fdf1ef; border-color: #e8c4be; }
+
+/* Save/status message: floating banner at the top of the screen */
+#saveStatus { position: fixed; top: max(0.75rem, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 1000; max-width: min(92vw, 32rem); min-height: 0; margin: 0; padding: 0.55rem 1.1rem; border-radius: 999px; border: 1px solid #e3ddd3; background: #ffffff; color: #333333; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); text-align: center; font-size: 0.95rem; pointer-events: none; }
+#saveStatus:empty { display: none; }
+#saveStatus.success { color: var(--primary); }
+#saveStatus.error { color: var(--danger); background: #fdf1ef; border-color: #e8c4be; }
