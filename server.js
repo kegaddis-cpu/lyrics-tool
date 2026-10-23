@@ -220,6 +220,10 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/key-finder", (req, res) => {
+  res.render("key-finder");
+});
+
 app.get("/api/songs", ensureDb, async (req, res, next) => {
   try {
     const [rows] = await pool.execute(`

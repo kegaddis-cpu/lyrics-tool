@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Key Finder · Lyrics Helper</title>
+  <link rel="stylesheet" href="/key-finder.css?v=2" />
+</head>
+<body>
+  <div class="kf-shell">
+    <header class="kf-topbar">
+      <div class="kf-brand">
+        <p class="kf-eyebrow">Music tools</p>
+        <h1>Key Finder</h1>
+      </div>
+      <div class="kf-topbar-actions">
+        <a href="/" class="kf-btn kf-btn-ghost">&larr; Lyrics Helper</a>
+        <form action="/logout" method="POST">
+          <button type="submit" class="kf-btn kf-btn-ghost">Logout</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="kf-main">
+      <!-- Upload -->
+      <section class="kf-card" aria-labelledby="uploadHeading">
+        <h2 id="uploadHeading" class="kf-card-title">1. Load a song</h2>
+        <label class="kf-drop" id="dropZone" for="audioFile">
+          <input type="file" id="audioFile" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" />
+          <span class="kf-drop-main">Tap to choose an audio file</span>
+          <span class="kf-drop-sub">or drag one here &middot; MP3, WAV, M4A &middot; stays on your device</span>
+        </label>
+        <div class="kf-progress" id="progressWrap" hidden>
+          <div class="kf-progress-bar" id="progressBar"></div>
+        </div>
+        <p class="kf-status" id="status" role="status" aria-live="polite"></p>
+        <audio id="player" controls hidden></audio>
+      </section>
+
+      <!-- Result -->
+      <section class="kf-card" id="resultCard" hidden aria-labelledby="resultHeading">
+        <h2 id="resultHeading" class="kf-card-title">2. Detected key</h2>
+        <div class="kf-result-top">
+          <div>
+            <p class="kf-key" id="keyName">&mdash;</p>
+            <p class="kf-sub" id="keyRelative"></p>
+          </div>
+          <div class="kf-confidence">
+            <p class="kf-label">Confidence <span id="confText"></span></p>
+            <div class="kf-meter"><div class="kf-meter-fill" id="confFill"></div></div>
+            <p class="kf-sub" id="tuningText"></p>
+          </div>
+        </div>
+        <p class="kf-note" id="closeCallNote" hidden></p>
+
+        <div class="kf-grid-2">
+          <div>
+            <p class="kf-label">Top candidates <span class="kf-hint">(tap to explore)</span></p>
+            <div id="candidates" class="kf-candidates"></div>
+          </div>
+          <div>
+            <p class="kf-label">Note strength in the song</p>
+            <div id="chromaBars" class="kf-chroma"></div>
+          </div>
+        </div>
+
+        <div id="timelineWrap" hidden>
+          <p class="kf-label">Key over time</p>
+          <div id="timeline" class="kf-timeline"></div>
+          <p class="kf-sub" id="timelineNote"></p>
+        </div>
+      </section>
+
+      <!-- Explore -->
+      <section class="kf-card" aria-labelledby="exploreHeading">
+        <h2 id="exploreHeading" class="kf-card-title">3. Scales &amp; chords</h2>
+        <div class="kf-controls">
+          <label class="kf-field">
+            <span>Key</span>
+            <select id="rootSelect"></select>
+          </label>
+          <div class="kf-field">
+            <span>Mode</span>
+            <div class="kf-segmented" role="group" aria-label="Mode">
+              <button type="button" data-mode="major" class="is-active">Major</button>
+              <button type="button" data-mode="minor">Minor</button>
+            </div>
+          </div>
+          <label class="kf-field kf-field-scale">
+            <span>Scale</span>
+            <select id="scaleSelect"></select>
+          </label>
+          <button type="button" id="relativeBtn" class="kf-btn kf-btn-secondary">Switch to relative</button>
+        </div>
+
+        <div class="kf-scale-notes" id="scaleNotes"></div>
+
+        <div class="kf-grid-2">
+          <div>
+            <p class="kf-label">Chords in <span id="chordKeyName"></span></p>
+            <div class="kf-chords" id="chords"></div>
+          </div>
+          <div>
+            <p class="kf-label">Progressions to try</p>
+            <ul class="kf-progressions" id="progressions"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fretboard -->
+      <section class="kf-card" aria-labelledby="fretHeading">
+        <div class="kf-card-head">
+          <h2 id="fretHeading" class="kf-card-title">4. Guitar fretboard</h2>
+          <div class="kf-segmented" role="group" aria-label="Fretboard labels">
+            <button type="button" data-label="name" class="is-active">Notes</button>
+            <button type="button" data-label="degree">Degrees</button>
+          </div>
+        </div>
+        <p class="kf-sub">Standard tuning. High e on top, like tab. <span class="kf-legend-root"></span> = root note.</p>
+        <div class="kf-fretboard-scroll">
+          <svg id="fretboard" role="img" aria-label="Guitar fretboard showing scale notes"></svg>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/key-detect-core.js?v=2"></script>
+  <script src="/key-finder.js?v=2"></script>
+</body>
+</html>

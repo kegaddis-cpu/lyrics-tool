@@ -1033,3 +1033,18 @@ input[type="checkbox"] {
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Link to the Key Finder page in the top bar */
+.key-finder-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.key-finder-link:hover { background: var(--primary-dark); }
