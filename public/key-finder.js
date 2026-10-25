@@ -50,10 +50,19 @@
     renderTheory();
   }
 
-  $("rootSelect").addEventListener("change", (e) => setKey(Number(e.target.value), state.mode, { keepScale: true }));
+  // When the user picks a key by hand, stop live detection from overriding it.
+  function pauseFollow() {
+    const t = $("followToggle");
+    if (t && t.checked && mic.running) {
+      t.checked = false;
+      setMicStatus("Auto-update paused because you picked a key. Tick the box to resume.");
+    }
+  }
+
+  $("rootSelect").addEventListener("change", (e) => { pauseFollow(); setKey(Number(e.target.value), state.mode, { keepScale: true }); });
   $("scaleSelect").addEventListener("change", (e) => { state.scale = e.target.value; renderTheory(); });
   document.querySelectorAll("[data-mode]").forEach((btn) =>
-    btn.addEventListener("click", () => setKey(state.root, btn.dataset.mode, { keepScale: true }))
+    btn.addEventListener("click", () => { pauseFollow(); setKey(state.root, btn.dataset.mode, { keepScale: true }); })
   );
   document.querySelectorAll("[data-label]").forEach((btn) =>
     btn.addEventListener("click", () => {
@@ -63,6 +72,7 @@
     })
   );
   $("relativeBtn").addEventListener("click", () => {
+    pauseFollow();
     const r = K.relativeOf(state.root, state.mode);
     setKey(r.root, r.mode);
   });
@@ -175,6 +185,7 @@
 
   async function handleFile(file) {
     if (!file) return;
+    if (mic.running) stopMic("Stopped listening to analyze the file.");
     $("resultCard").hidden = true;
     setProgress(0);
     setStatus(`Reading "${file.name}"…`);
@@ -198,7 +209,7 @@
         return;
       }
       state.detected = result;
-      showResult(result, file.name);
+      showResult(result, "File: " + file.name);
       setKey(result.best.root, result.best.mode);
       setStatus(`Done: ${file.name}`);
     } catch (err) {
@@ -213,9 +224,10 @@
     return `${m}:${String(sec).padStart(2, "0")}`;
   }
 
-  function showResult(r) {
+  function showResult(r, source) {
     const { best } = r;
     $("resultCard").hidden = false;
+    $("sourcePill").textContent = source || "";
     $("keyName").textContent = K.keyLabel(best.root, best.mode);
     const rel = K.relativeOf(best.root, best.mode);
     $("keyRelative").textContent = `Relative key: ${K.keyLabel(rel.root, rel.mode)} (same notes)`;
@@ -253,7 +265,7 @@
       })
       .join("");
     $("candidates").querySelectorAll(".kf-cand").forEach((b) =>
-      b.addEventListener("click", () => setKey(Number(b.dataset.root), b.dataset.mode))
+      b.addEventListener("click", () => { pauseFollow(); setKey(Number(b.dataset.root), b.dataset.mode); })
     );
 
     // Chroma bars (ordered from detected root)
@@ -270,7 +282,7 @@
     $("chromaBars").innerHTML = bars;
 
     // Timeline (only meaningful for longer audio)
-    const segs = r.segments;
+    const segs = r.segments || [];
     if (r.duration >= 40 && segs.length >= 3) {
       $("timelineWrap").hidden = false;
       const family = (k) => {
@@ -309,6 +321,170 @@
     const f = e.dataTransfer && e.dataTransfer.files[0];
     if (f) handleFile(f);
   });
+
+  // ---------- Live microphone (default mode) ----------
+  const mic = { running: false, ctx: null, stream: null, src: null, proc: null, mute: null,
+    live: null, timer: null, raf: 0, level: 0, wakeLock: null, startedAt: 0,
+    candidate: null, candidateCount: 0, shownKey: null };
+
+  function setMicStatus(msg, isError) {
+    $("micStatus").textContent = msg;
+    $("micStatus").classList.toggle("is-error", !!isError);
+  }
+
+  function setLiveKey(text, idle) {
+    $("liveKey").textContent = text;
+    $("liveKey").classList.toggle("is-idle", !!idle);
+  }
+
+  function micSupported() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+
+  async function startMic() {
+    if (!micSupported()) {
+      setMicStatus("This browser can't use the microphone here. Open the page over https in Safari, Chrome, or Edge, or use the file option below.", true);
+      return;
+    }
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    // Create + resume the context inside the tap (required on iPhone/iPad)
+    const ctx = new Ctx();
+    if (ctx.resume) ctx.resume();
+    setMicStatus("Waiting for microphone permission...");
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    } catch (err) {
+      if (ctx.close) ctx.close();
+      const denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+      setMicStatus(denied
+        ? "Microphone access was blocked. Allow it in your browser's site settings, then try again."
+        : "Couldn't start the microphone (" + (err && err.name || "error") + ").", true);
+      return;
+    }
+
+    const sr = ctx.sampleRate;
+    const factor = Math.max(1, Math.floor(sr / 20000));
+    const live = K.createLiveAnalyzer(sr / factor, { windowSeconds: Number($("windowSelect").value) });
+    const src = ctx.createMediaStreamSource(stream);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+    const mute = ctx.createGain();
+    mute.gain.value = 0;               // keeps the node running without echoing to speakers
+    src.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+
+    proc.onaudioprocess = (e) => {
+      const x = e.inputBuffer.getChannelData(0);
+      const n = Math.floor(x.length / factor);
+      const out = new Float32Array(n);
+      let sq = 0;
+      for (let i = 0; i < n; i++) {
+        let v = 0;
+        for (let k = 0; k < factor; k++) v += x[i * factor + k];
+        v /= factor;
+        out[i] = v; sq += v * v;
+      }
+      mic.level = Math.sqrt(sq / Math.max(1, n));
+      live.push(out);
+    };
+
+    Object.assign(mic, { running: true, ctx, stream, src, proc, mute, live, startedAt: Date.now(),
+      candidate: null, candidateCount: 0, shownKey: null });
+    $("micBtn").classList.add("is-on");
+    $("micBtn").setAttribute("aria-pressed", "true");
+    $("micBtnText").textContent = "Stop";
+    $("liveBadge").hidden = false;
+    setLiveKey("Listening...", true);
+    setMicStatus("Listening. Play or sing for a few seconds.");
+
+    try {
+      if (navigator.wakeLock) {
+        mic.wakeLock = await navigator.wakeLock.request("screen");
+        mic.wakeLock.addEventListener("release", () => { mic.wakeLock = null; });
+      }
+    } catch (_) {}
+
+    mic.timer = setInterval(updateLive, 500);
+    const draw = () => {
+      // Map RMS to a 0-100% meter (log scale)
+      const db = 20 * Math.log10(mic.level + 1e-6);
+      const pct = Math.max(0, Math.min(100, ((db + 60) / 50) * 100));
+      $("levelFill").style.width = pct + "%";
+      mic.raf = requestAnimationFrame(draw);
+    };
+    draw();
+  }
+
+  function stopMic(message) {
+    if (!mic.running) return;
+    clearInterval(mic.timer);
+    cancelAnimationFrame(mic.raf);
+    try { mic.proc.onaudioprocess = null; mic.src.disconnect(); mic.proc.disconnect(); mic.mute.disconnect(); } catch (_) {}
+    mic.stream.getTracks().forEach((t) => t.stop());
+    if (mic.ctx.close) mic.ctx.close();
+    if (mic.wakeLock) { mic.wakeLock.release().catch(() => {}); mic.wakeLock = null; }
+    mic.running = false;
+    $("micBtn").classList.remove("is-on");
+    $("micBtn").setAttribute("aria-pressed", "false");
+    $("micBtnText").textContent = "Start listening";
+    $("liveBadge").hidden = true;
+    $("levelFill").style.width = "0%";
+    const r = mic.live && mic.live.result();
+    setMicStatus(message || (r && r.best
+      ? "Stopped. Last key heard: " + K.keyLabel(r.best.root, r.best.mode) + "."
+      : "Stopped."));
+  }
+
+  function updateLive() {
+    const r = mic.live.result();
+    const elapsed = (Date.now() - mic.startedAt) / 1000;
+    if (!r.best) {
+      if (elapsed > 6 && r.heardSeconds < 1) {
+        setMicStatus("Not hearing much yet. Move closer or turn the music up.");
+      } else {
+        setMicStatus("Listening... heard " + r.heardSeconds.toFixed(0) + " s of music so far.");
+      }
+      return;
+    }
+    const label = K.keyLabel(r.best.root, r.best.mode);
+    setLiveKey(label, false);
+    setMicStatus("Heard " + Math.round(r.heardSeconds) + " s of music" + (r.confidence < 0.35 ? ". Still settling..." : ".") +
+      ($("followToggle").checked ? "" : " Auto-update is paused."));
+    showResult(r, "Live mic");
+
+    // Only move the scales/chords once the key has held steady for ~1.5 s
+    const id = r.best.root + r.best.mode;
+    if (id === mic.candidate) mic.candidateCount++;
+    else { mic.candidate = id; mic.candidateCount = 1; }
+    if ($("followToggle").checked && mic.candidateCount >= 3 && id !== mic.shownKey) {
+      mic.shownKey = id;
+      setKey(r.best.root, r.best.mode, { keepScale: true });
+    }
+  }
+
+  $("micBtn").addEventListener("click", () => (mic.running ? stopMic() : startMic()));
+  $("windowSelect").addEventListener("change", (e) => { if (mic.live) mic.live.setWindow(Number(e.target.value)); });
+  $("followToggle").addEventListener("change", (e) => {
+    if (e.target.checked) { mic.shownKey = null; if (mic.running) setMicStatus("Auto-update is back on."); }
+  });
+  $("resetBtn").addEventListener("click", () => {
+    if (mic.live) mic.live.reset();
+    mic.candidate = null; mic.candidateCount = 0; mic.shownKey = null;
+    setLiveKey(mic.running ? "Listening..." : "Play or sing near your device", true);
+    $("resultCard").hidden = true;
+    if (mic.running) setMicStatus("Starting over. Listening...");
+  });
+  document.addEventListener("visibilitychange", () => {
+    // Re-acquire the screen wake lock when returning to the tab
+    if (document.visibilityState === "visible" && mic.running && navigator.wakeLock && !mic.wakeLock) {
+      navigator.wakeLock.request("screen").then((l) => { mic.wakeLock = l; }).catch(() => {});
+    }
+  });
+  if (!micSupported()) {
+    setMicStatus("Microphone isn't available in this browser. Use the file option below.", true);
+    $("uploadCard").open = true;
+  }
 
   // Initial render
   fillRootSelect();

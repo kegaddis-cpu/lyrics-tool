@@ -131,6 +131,83 @@ button, input, select { font: inherit; color: inherit; }
 #player { width: 100%; }
 #player[hidden] { display: none; }
 
+/* Live listening */
+.kf-live { border-color: rgba(20, 101, 106, 0.45); }
+.kf-live-main { display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
+.kf-mic-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 8.5rem;
+  height: 8.5rem;
+  border-radius: 50%;
+  border: 0;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 0.4rem 1.2rem rgba(20, 101, 106, 0.3);
+  transition: background 150ms ease, transform 120ms ease;
+  flex-shrink: 0;
+}
+.kf-mic-btn svg { width: 2.4rem; height: 2.4rem; fill: currentColor; }
+.kf-mic-btn:hover { background: var(--primary-dark); }
+.kf-mic-btn:active { transform: scale(0.97); }
+.kf-mic-btn.is-on { background: var(--danger); box-shadow: 0 0 0 0 rgba(157, 75, 64, 0.5); animation: kf-pulse 1.6s ease-out infinite; }
+@keyframes kf-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(157, 75, 64, 0.45); }
+  100% { box-shadow: 0 0 0 1.1rem rgba(157, 75, 64, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .kf-mic-btn.is-on { animation: none; } }
+.kf-live-info { flex: 1 1 14rem; min-width: 0; display: grid; gap: 0.5rem; }
+.kf-live-key { margin: 0; font-size: clamp(1.5rem, 5vw, 2.4rem); font-weight: 800; line-height: 1.05; color: var(--primary-dark); }
+.kf-live-key.is-idle { font-size: clamp(1.1rem, 3vw, 1.4rem); font-weight: 700; color: var(--text); }
+.kf-level { height: 10px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
+.kf-level-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 60ms linear; }
+.kf-live-options { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; padding-top: 0.2rem; border-top: 1px solid var(--line); }
+.kf-live-options .kf-field { padding-top: 0.6rem; }
+.kf-check { display: inline-flex; align-items: center; gap: 0.45rem; min-height: 2.5rem; font-size: 0.92rem; cursor: pointer; }
+.kf-check input { width: 1.15rem; height: 1.15rem; accent-color: var(--primary); }
+.kf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kf-pill:empty, .kf-pill[hidden] { display: none; }
+#liveBadge { background: #f6e4e1; border-color: #e3bdb6; color: var(--danger); }
+.kf-rec-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--danger); }
+
+/* Upload as secondary, collapsible */
+.kf-upload { display: block; padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.kf-upload[open] > :not(summary) { margin-top: 0.9rem; }
+.kf-upload[open] > [hidden] { display: none; }
+.kf-upload summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  cursor: pointer;
+  list-style: none;
+}
+.kf-upload summary::-webkit-details-marker { display: none; }
+.kf-upload summary::before { content: "+"; font-weight: 700; color: var(--primary); width: 1rem; }
+.kf-upload[open] summary::before { content: "\2212"; }
+.kf-upload-title { font-size: 1rem; }
+
 /* Result */
 .kf-result-top { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
 .kf-key { margin: 0; font-size: clamp(2rem, 6vw, 2.8rem); font-weight: 800; line-height: 1; color: var(--primary-dark); }
@@ -279,4 +356,8 @@ button, input, select { font: inherit; color: inherit; }
   .kf-controls { display: grid; grid-template-columns: 1fr 1fr; }
   .kf-controls .kf-field select { width: 100%; min-width: 0; }
   #relativeBtn, .kf-field-scale { grid-column: 1 / -1; }
+  .kf-live-main { flex-direction: column; align-items: stretch; text-align: center; }
+  .kf-mic-btn { align-self: center; width: 7.5rem; height: 7.5rem; }
+  .kf-live-options { display: grid; grid-template-columns: 1fr; }
+  .kf-live-options select { width: 100%; }
 }

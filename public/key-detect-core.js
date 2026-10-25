@@ -238,6 +238,142 @@
     return { chroma, ranking, best, tuningCents, confidence, closeCall, segments, duration };
   }
 
+  // ---------- Live (streaming) analysis ----------
+  /**
+   * createLiveAnalyzer(sampleRate, options)
+   *   options.windowSeconds: how far back the key "remembers" (0 = whole session). Default 20.
+   * Methods:
+   *   push(Float32Array)  feed mono samples (any chunk size)
+   *   result()            current { best, ranking, chroma, confidence, closeCall, tuningCents, heardSeconds, level }
+   *   setWindow(seconds)  change memory length
+   *   reset()
+   */
+  function createLiveAnalyzer(sampleRate, options) {
+    options = options || {};
+    const N = sampleRate >= 32000 ? 16384 : 8192;
+    const hop = N >> 1;
+    const hopSec = hop / sampleRate;
+    const binHz = sampleRate / N;
+    const kMin = Math.max(1, Math.floor(FMIN / binHz));
+    const kMax = Math.min(N / 2 - 1, Math.ceil(FMAX / binHz));
+    const win = new Float32Array(N);
+    for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (N - 1));
+    const re = new Float64Array(N), im = new Float64Array(N);
+    const mag = new Float32Array(kMax + 1);
+
+    let buf = new Float32Array(N * 2);
+    let fill = 0;
+    let windowSeconds = options.windowSeconds == null ? 20 : options.windowSeconds;
+    let decay, chroma, tuneX, tuneY, heardFrames, peakRms, lastRms;
+
+    function setWindow(sec) {
+      windowSeconds = sec;
+      decay = sec > 0 ? Math.exp(-hopSec / sec) : 1;
+    }
+    function reset() {
+      fill = 0;
+      chroma = new Float64Array(12);
+      tuneX = 0; tuneY = 0;
+      heardFrames = 0;
+      peakRms = 0;
+      lastRms = 0;
+    }
+    setWindow(windowSeconds);
+    reset();
+
+    function processFrame() {
+      let energy = 0;
+      for (let i = 0; i < N; i++) {
+        const s = buf[i] * win[i];
+        re[i] = s; im[i] = 0; energy += s * s;
+      }
+      const rms = Math.sqrt(energy / N) * 2; // compensate for Hann window
+      lastRms = rms;
+      peakRms = Math.max(rms, peakRms * 0.999);
+
+      // Gate out silence / room noise
+      if (rms < 0.004 || rms < peakRms * 0.08) return;
+
+      fft(re, im);
+      let maxMag = 0;
+      for (let k = kMin; k <= kMax; k++) {
+        mag[k] = Math.sqrt(re[k] * re[k] + im[k] * im[k]);
+        if (mag[k] > maxMag) maxMag = mag[k];
+      }
+      const thresh = maxMag * 0.05;
+      const peaks = [];
+      const tDecay = 0.995;
+      tuneX *= tDecay; tuneY *= tDecay;
+      for (let k = kMin + 1; k < kMax; k++) {
+        const m = mag[k];
+        if (m > thresh && m >= mag[k - 1] && m > mag[k + 1]) {
+          const a = Math.log(mag[k - 1] + 1e-12), b = Math.log(m + 1e-12), c = Math.log(mag[k + 1] + 1e-12);
+          const denom = a - 2 * b + c;
+          const p = denom !== 0 ? 0.5 * (a - c) / denom : 0;
+          const midi = 69 + 12 * Math.log2(((k + p) * binHz) / 440);
+          peaks.push({ midi, m });
+          const dev = (midi - Math.round(midi)) * 2 * Math.PI;
+          tuneX += m * Math.cos(dev); tuneY += m * Math.sin(dev);
+        }
+      }
+      if (!peaks.length) return;
+      const tuneShift = Math.atan2(tuneY, tuneX) / (2 * Math.PI);
+
+      const c = new Float64Array(12);
+      for (const pk of peaks) {
+        const midi = pk.midi - tuneShift;
+        const nearest = Math.round(midi);
+        const dist = Math.abs(midi - nearest);
+        if (dist > 0.4) continue;
+        const w = Math.log(1 + 100 * pk.m) * (1 - dist) * (nearest < 40 ? 0.6 : 1);
+        c[((nearest % 12) + 12) % 12] += w;
+      }
+      let s = 0;
+      for (let i = 0; i < 12; i++) s += c[i];
+      if (!s) return;
+      for (let i = 0; i < 12; i++) chroma[i] = chroma[i] * decay + c[i] / s;
+      heardFrames++;
+    }
+
+    function push(samples) {
+      let i = 0;
+      while (i < samples.length) {
+        const take = Math.min(samples.length - i, N - fill);
+        buf.set(samples.subarray(i, i + take), fill);
+        fill += take; i += take;
+        if (fill === N) {
+          processFrame();
+          buf.copyWithin(0, hop, N);
+          fill = N - hop;
+        }
+      }
+    }
+
+    function result() {
+      const heardSeconds = heardFrames * hopSec;
+      const tuningCents = Math.round((Math.atan2(tuneY, tuneX) / (2 * Math.PI)) * 100);
+      let sum = 0;
+      for (let i = 0; i < 12; i++) sum += chroma[i];
+      if (!sum || heardFrames < 8) {
+        return { best: null, ranking: [], chroma: Array.from(chroma), confidence: 0, closeCall: null, tuningCents, heardSeconds, level: lastRms };
+      }
+      const ch = Array.from(chroma).map((v) => v / sum);
+      const ranking = scoreKeys(ch);
+      const best = ranking[0];
+      const rel = relativeOf(best.root, best.mode);
+      const rival = ranking.find((k) => k.root !== best.root && !(k.root === rel.root && k.mode === rel.mode));
+      const margin = rival ? best.score - rival.score : best.score;
+      // Ramp confidence up over the first ~6 seconds of sound
+      const ramp = Math.min(1, heardSeconds / 6);
+      const confidence = Math.max(0, Math.min(1, best.score)) * Math.max(0, Math.min(1, margin / 0.25)) * ramp;
+      const runnerUp = ranking[1];
+      const closeCall = runnerUp && best.score - runnerUp.score < 0.05 ? runnerUp : null;
+      return { best, ranking, chroma: ch, confidence, closeCall, tuningCents, heardSeconds, level: lastRms };
+    }
+
+    return { push, result, reset, setWindow, get level() { return lastRms; } };
+  }
+
   // ---------- Theory helpers ----------
   const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
   const LETTER_PC = [0, 2, 4, 5, 7, 9, 11];
@@ -363,7 +499,7 @@
   }
 
   return {
-    analyze, scoreKeys, scaleNotes, keyChords, progressions, relativeOf,
+    analyze, createLiveAnalyzer, scoreKeys, scaleNotes, keyChords, progressions, relativeOf,
     rootName, keyLabel, fretboard, SCALES,
     PITCH_NAMES: MAJOR_ROOT_NAMES,
   };
